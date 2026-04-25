@@ -221,7 +221,7 @@ body.state-lose {
 .battle-characters {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 20px;
   align-items: stretch;
 }
 
@@ -230,7 +230,7 @@ body.state-lose {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 0.6rem;
   padding: 0.75rem;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.2s ease;
   position: relative;
   overflow: hidden;
   text-align: center;
@@ -239,6 +239,10 @@ body.state-lose {
   justify-content: flex-start;
   align-items: center;
   min-height: 260px;
+}
+
+.battle-card:hover {
+  transform: scale(1.02);
 }
 
 .battle-card.impact-flash::after {
@@ -278,7 +282,7 @@ body.flash-lose::after {
 #enemyImage {
   width: 100%;
   max-width: 260px;
-  height: 140px;
+  height: 120px;
   object-fit: contain;
   background: #000;
   border-radius: 8px;
@@ -354,10 +358,10 @@ body.flash-lose::after {
 }
 
 #questionDisplay {
-  font-size: 48px;
+  font-size: 2.2rem;
   text-align: center;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: 0.03em;
   padding: 0.8rem 0;
   margin-top: 10px;
@@ -373,9 +377,12 @@ body.flash-lose::after {
 }
 
 #questionImage {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
+  border-radius: 12px;
+  background: #000;
+  padding: 6px;
   margin: 0.4rem auto 0.1rem;
   display: block;
   position: relative;
@@ -386,6 +393,7 @@ body.flash-lose::after {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 10px;
 }
 
 #battleResult {
@@ -411,11 +419,11 @@ body.flash-lose::after {
 }
 
 .question-area {
-  margin-top: 1.4rem;
+  margin-top: 20px;
   margin-bottom: 0.7rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 0.6rem;
-  padding: 1.2rem 1rem;
+  padding: 20px;
   width: 100%;
 }
 

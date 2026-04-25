@@ -346,30 +346,31 @@ function getNumberFromSpeech(text) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  console.log("RAW:", text);
-  console.log("NORMALIZED:", normalized);
+  console.log("CHECKING:", normalized);
+
+  // DIGIT fallback
+  const digitMatch = normalized.match(/\d+/);
+  if (digitMatch) return parseInt(digitMatch[0], 10);
 
   const map = [
-    { value: 1, keys: ["1", "one", "ena"] },
-    { value: 2, keys: ["2", "two", "dio", "duo"] },
-    { value: 3, keys: ["3", "three", "tria"] },
-    { value: 4, keys: ["4", "four", "tessera", "tesera", "desera"] },
-    { value: 5, keys: ["5", "five", "pente"] },
-    { value: 6, keys: ["6", "six", "exi"] },
-    { value: 7, keys: ["7", "seven", "epta"] },
-    { value: 8, keys: ["8", "eight", "okto"] },
-    { value: 9, keys: ["9", "nine", "ennia", "ennea"] },
-    { value: 10, keys: ["10", "ten", "deka"] },
+    { value: 1, keys: ["one", "ena"] },
+    { value: 2, keys: ["two", "dio", "duo"] },
+    { value: 3, keys: ["three", "tria"] },
+    { value: 4, keys: ["four", "tessera", "tesera"] },
+    { value: 5, keys: ["five", "pente"] },
+    { value: 6, keys: ["six", "exi"] },
+    { value: 7, keys: ["seven", "epta"] },
+    { value: 8, keys: ["eight", "okto", "octo"] },
+    { value: 9, keys: ["nine", "ennia", "ennea", "enya"] },
+    { value: 10, keys: ["ten", "deka"] },
   ];
 
   for (const item of map) {
     if (item.keys.some((k) => normalized.includes(k))) {
-      console.log("MATCHED NUMBER:", item.value);
       return item.value;
     }
   }
 
-  console.log("MATCHED NUMBER:", null);
   return null;
 }
 

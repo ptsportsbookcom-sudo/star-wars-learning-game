@@ -341,29 +341,29 @@ function getCharacterFromSpeech(text) {
 }
 
 function getNumberFromSpeech(text) {
-  const lower = text.toLowerCase();
-  const normalizedText = normalizeVoiceTranscript(text);
-  const combined = `${lower} ${normalizedText}`;
+  const normalized = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
   console.log("RAW:", text);
-  console.log("NORMALIZED:", normalizedText);
+  console.log("NORMALIZED:", normalized);
 
   const map = [
-    { value: 0, keys: ["0", "zero", "μηδέν", "miden"] },
-    { value: 1, keys: ["1", "one", "ένα", "ena"] },
-    { value: 2, keys: ["2", "two", "δύο", "dio", "duo"] },
-    { value: 3, keys: ["3", "three", "τρία", "tria"] },
-    { value: 4, keys: ["4", "four", "τέσσερα", "tessera", "tesera"] },
-    { value: 5, keys: ["5", "five", "πέντε", "pente"] },
-    { value: 6, keys: ["6", "six", "έξι", "exi"] },
-    { value: 7, keys: ["7", "seven", "επτά", "epta"] },
-    { value: 8, keys: ["8", "eight", "οκτώ", "okto"] },
-    { value: 9, keys: ["9", "nine", "εννιά", "εννέα", "ennia", "ennea"] },
-    { value: 10, keys: ["10", "ten", "δέκα", "deka"] },
+    { value: 1, keys: ["1", "one", "ena", "ena", "ένα"] },
+    { value: 2, keys: ["2", "two", "dio", "duo", "δύο"] },
+    { value: 3, keys: ["3", "three", "tria", "τρια", "τρία"] },
+    { value: 4, keys: ["4", "four", "tessera", "tesera", "desera", "τέσσερα"] },
+    { value: 5, keys: ["5", "five", "pente", "πεντε", "πέντε"] },
+    { value: 6, keys: ["6", "six", "exi", "εξι", "έξι"] },
+    { value: 7, keys: ["7", "seven", "epta", "επτα", "επτά"] },
+    { value: 8, keys: ["8", "eight", "okto", "οκτω", "οκτώ"] },
+    { value: 9, keys: ["9", "nine", "ennia", "ennea", "εννια", "εννέα"] },
+    { value: 10, keys: ["10", "ten", "deka", "δεκα", "δέκα"] },
   ];
 
   for (const item of map) {
-    if (item.keys.some((k) => combined.includes(k))) {
+    if (item.keys.some((k) => normalized.includes(k))) {
       console.log("MATCHED NUMBER:", item.value);
       return item.value;
     }

@@ -5,11 +5,17 @@
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #0d1117;
+  background-color: #0d1117;
+  background-image: radial-gradient(circle at 15% 20%, #ffffff33 1px, transparent 1px),
+    radial-gradient(circle at 80% 10%, #ffffff22 1px, transparent 1px),
+    radial-gradient(circle at 35% 70%, #ffffff22 1px, transparent 1px),
+    radial-gradient(circle at 65% 50%, #ffffff2f 1px, transparent 1px);
+  background-size: 220px 220px, 260px 260px, 200px 200px, 180px 180px;
   color: #f5f5f5;
   min-height: 100vh;
   display: grid;
   place-items: center;
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
 }
 
 .container {
@@ -142,4 +148,89 @@ select {
 .character-card.selected {
   border-color: #feda4a;
   box-shadow: 0 0 0 3px rgba(254, 218, 74, 0.25);
+}
+
+body.battle-mode {
+  background-color: #1b1f31;
+  box-shadow: inset 0 0 120px rgba(60, 80, 140, 0.35);
+}
+
+body.victory-mode {
+  background-color: #0f2a1a;
+  box-shadow: inset 0 0 140px rgba(80, 220, 130, 0.45);
+}
+
+body.defeat-mode {
+  background-color: #2a1010;
+  box-shadow: inset 0 0 140px rgba(235, 70, 70, 0.45);
+}
+
+.battle-area {
+  margin-top: 1.25rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: left;
+}
+
+.battle-area h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.2rem;
+}
+
+.battle-characters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.battle-card {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.6rem;
+  padding: 0.75rem;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.battle-label {
+  margin: 0 0 0.35rem;
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+#playerName,
+#enemyName,
+#battleResult {
+  margin: 0;
+  font-weight: 600;
+}
+
+#battleResult {
+  margin-top: 0.85rem;
+}
+
+.attack {
+  transform: scale(1.08);
+}
+
+.shake {
+  animation: shake 0.35s linear;
+}
+
+.fade {
+  opacity: 0.35;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
 }

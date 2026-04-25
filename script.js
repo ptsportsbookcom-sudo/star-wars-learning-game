@@ -10,27 +10,27 @@ const characterGridElement = document.getElementById("characterGrid");
 const characters = [
   {
     name: "Luke Skywalker",
-    image: "https://starwars-visualguide.com/assets/img/characters/1.jpg",
+    image: "https://via.placeholder.com/150?text=Luke",
   },
   {
     name: "Chewbacca",
-    image: "https://starwars-visualguide.com/assets/img/characters/13.jpg",
+    image: "https://via.placeholder.com/150?text=Chewbacca",
   },
   {
     name: "Darth Vader",
-    image: "https://starwars-visualguide.com/assets/img/characters/4.jpg",
+    image: "https://via.placeholder.com/150?text=Vader",
   },
   {
     name: "Emperor",
-    image: "https://starwars-visualguide.com/assets/img/characters/21.jpg",
+    image: "https://via.placeholder.com/150?text=Emperor",
   },
   {
     name: "R2-D2",
-    image: "https://starwars-visualguide.com/assets/img/characters/3.jpg",
+    image: "https://via.placeholder.com/150?text=R2D2",
   },
   {
     name: "Darth Maul",
-    image: "https://starwars-visualguide.com/assets/img/characters/44.jpg",
+    image: "https://via.placeholder.com/150?text=Maul",
   },
 ];
 
@@ -46,7 +46,12 @@ function renderCharacterCards() {
     .map(
       (character) => `
         <article class="character-card" data-character="${character.name}">
-          <img src="${character.image}" alt="${character.name}" loading="lazy" />
+          <img
+            src="${character.image}"
+            alt="${character.name}"
+            loading="lazy"
+            onerror="this.onerror=null;this.src='https://via.placeholder.com/150?text=Character';"
+          />
           <p>${character.name}</p>
         </article>
       `

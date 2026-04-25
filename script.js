@@ -94,10 +94,26 @@ const OBJECTS = [
   { name: "horse", el: "αλογο", alt: ["alogo"], img: "https://source.unsplash.com/300x300/?horse" }
 ];
 const CHARACTER_IMAGES = {
-  "Luke Skywalker": "Images/Luke.png",
-  "R2-D2": "Images/r2d2.png",
-  "Darth Vader": "Images/Darth.png",
-  Emperor: "Images/Emperor.png",
+  "Luke Skywalker": {
+    idle: "Images/Luke defend.png",
+    attack: "Images/Luke attack.png",
+    lose: "Images/Luke lost.png"
+  },
+  "Darth Vader": {
+    idle: "Images/darth vader defend.png",
+    attack: "Images/Darth attack.png",
+    lose: "Images/Darth Lose.png"
+  },
+  Emperor: {
+    idle: "Images/Emperor defend.png",
+    attack: "Images/Emperor Attack.png",
+    lose: "Images/emperor lose.png"
+  },
+  "R2-D2": {
+    idle: "Images/r2d2 defend.png",
+    attack: "Images/r2d2 attack.png",
+    lose: "Images/r2d2 lose.png"
+  }
 };
 const BACKGROUND_IMAGES = [
   "Images/Designer (1).png",
@@ -215,15 +231,6 @@ function applyOutcomeOverlay(outcomeClass) {
   }
 }
 
-function flashScreen(flashClass) {
-  document.body.classList.remove("flash-win", "flash-lose");
-  void document.body.offsetWidth;
-  document.body.classList.add(flashClass);
-  setTimeout(() => {
-    document.body.classList.remove(flashClass);
-  }, 360);
-}
-
 function setQuestionBackground() {
   const themes = ["theme-desert", "theme-space", "theme-electric", "theme-night"];
   const randomTheme = themes[getRandomInt(0, themes.length - 1)];
@@ -233,67 +240,6 @@ function setQuestionBackground() {
 
 setBattleBackground("theme-space");
 
-function triggerEffect(element, className, durationMs = 450) {
-  element.classList.remove(className);
-  void element.offsetWidth;
-  element.classList.add(className);
-  setTimeout(() => {
-    element.classList.remove(className);
-  }, durationMs);
-}
-
-function resetFighterAnimationState() {
-  playerImageElement.classList.remove("attack", "hit");
-  enemyImageElement.classList.remove("attack", "hit");
-  playerImageElement.classList.add("idle");
-  enemyImageElement.classList.add("idle");
-}
-
-function runMiniFightAnimation(playerWon) {
-  resetFighterAnimationState();
-  playerImageElement.classList.remove("idle");
-  enemyImageElement.classList.remove("idle");
-
-  let hitCardElement = enemyCardElement;
-  if (playerWon) {
-    playerImageElement.classList.add("attack");
-    enemyImageElement.classList.add("hit");
-    impactTextElement.textContent = "HIT!";
-    impactTextElement.classList.remove("show-miss");
-    impactTextElement.classList.add("show-hit");
-  } else {
-    enemyImageElement.classList.add("attack");
-    playerImageElement.classList.add("hit");
-    hitCardElement = playerCardElement;
-    impactTextElement.textContent = "MISS!";
-    impactTextElement.classList.remove("show-hit");
-    impactTextElement.classList.add("show-miss");
-  }
-
-  hitCardElement.classList.remove("impact-flash");
-  void hitCardElement.offsetWidth;
-  hitCardElement.classList.add("impact-flash");
-  setTimeout(() => {
-    hitCardElement.classList.remove("impact-flash");
-  }, 260);
-
-  setTimeout(() => {
-    resetFighterAnimationState();
-    impactTextElement.textContent = "";
-    impactTextElement.classList.remove("show-hit", "show-miss");
-  }, 800);
-}
-
-function animateAttack(attacker, defender, isPlayer) {
-  attacker.style.animation = "attack 0.4s ease";
-  defender.style.animation = "hit 0.4s ease";
-
-  setTimeout(() => {
-    attacker.style.animation = "idle 2s infinite ease-in-out";
-    defender.style.animation = "idle 2s infinite ease-in-out";
-  }, 400);
-}
-
 function resolveBattleRound(isCorrectAnswer) {
   if (!selectedCharacter || !enemyCharacter) {
     return;
@@ -301,67 +247,58 @@ function resolveBattleRound(isCorrectAnswer) {
 
   if (isCorrectAnswer) {
     battleResultElement.textContent = "You Win!";
-    speakMessage("Correct!");
     applyOutcomeOverlay("state-win");
-    flashScreen("flash-win");
-    runMiniFightAnimation(true);
   } else {
     battleResultElement.textContent = "You Lose!";
-    speakMessage("You Lose!");
     applyOutcomeOverlay("state-lose");
-    flashScreen("flash-lose");
-    runMiniFightAnimation(false);
   }
 }
 
 function handleCorrectAnswer() {
-  setRandomBackground();
-  animateAttack(playerImageElement, enemyImageElement, true);
-  document.body.style.filter = "brightness(1.3)";
-  setTimeout(() => {
-    document.body.style.filter = "";
-  }, 400);
-  playerImageElement.classList.remove("lose-effect");
-  playerImageElement.classList.add("win-effect");
-  setTimeout(() => {
-    playerImageElement.classList.remove("win-effect");
-  }, 500);
-
   resolveBattleRound(true);
-  if (nextRoundTimeout) {
-    clearTimeout(nextRoundTimeout);
-  }
-  nextRoundTimeout = setTimeout(() => {
-    console.log("ANSWER DONE");
-    console.log("STATE:", gameState);
-    console.log("NEXT QUESTION TRIGGERED");
-    generateQuestion();
-  }, 1000);
+  setGameState("result");
+
+  // SHOW ATTACK VS LOSE
+  setCharacterImage(playerImageElement, selectedCharacter, "attack");
+  setCharacterImage(enemyImageElement, enemyCharacter, "lose");
+
+  speakMessage("Correct!");
+
+  // WAIT 10 SECONDS (NO INPUT)
+  setTimeout(() => {
+    // RESET TO DEFEND
+    setCharacterImage(playerImageElement, selectedCharacter, "idle");
+    setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+
+    // WAIT 5 SECONDS BEFORE NEXT QUESTION
+    setTimeout(() => {
+      answerLocked = false;
+      generateQuestion();
+    }, 5000);
+
+  }, 10000);
 }
 
 function handleWrongAnswer() {
-  setRandomBackground();
-  animateAttack(enemyImageElement, playerImageElement, false);
-  document.body.style.animation = "shake 0.4s";
-  setTimeout(() => {
-    document.body.style.animation = "";
-  }, 400);
-  playerImageElement.classList.remove("win-effect");
-  playerImageElement.classList.add("lose-effect");
-  setTimeout(() => {
-    playerImageElement.classList.remove("lose-effect");
-  }, 500);
-
   resolveBattleRound(false);
-  if (nextRoundTimeout) {
-    clearTimeout(nextRoundTimeout);
-  }
-  nextRoundTimeout = setTimeout(() => {
-    console.log("ANSWER DONE");
-    console.log("STATE:", gameState);
-    console.log("NEXT QUESTION TRIGGERED");
-    generateQuestion();
-  }, 1000);
+  setGameState("result");
+
+  // ENEMY ATTACK
+  setCharacterImage(playerImageElement, selectedCharacter, "lose");
+  setCharacterImage(enemyImageElement, enemyCharacter, "attack");
+
+  speakMessage("Wrong!");
+
+  setTimeout(() => {
+    setCharacterImage(playerImageElement, selectedCharacter, "idle");
+    setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+
+    setTimeout(() => {
+      answerLocked = false;
+      generateQuestion();
+    }, 5000);
+
+  }, 10000);
 }
 
 function speakMessage(message) {
@@ -388,12 +325,12 @@ function setGameState(nextState) {
   }
 }
 
-function setCharacterImage(imgElement, characterName) {
-  const imagePath = CHARACTER_IMAGES[characterName] || "Images/Luke.png";
-  console.log("Loading image:", imagePath);
+function setCharacterImage(imgElement, characterName, state = "idle") {
+  const imagePath = CHARACTER_IMAGES[characterName]?.[state];
+  if (!imagePath) return;
+
   imgElement.src = imagePath;
   imgElement.alt = characterName;
-  imgElement.classList.add("idle");
 }
 
 function getRandomInt(min, max) {
@@ -566,8 +503,8 @@ function selectCharacter(character) {
   selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
   playerNameElement.textContent = selectedCharacter;
   enemyNameElement.textContent = enemyCharacter;
-  setCharacterImage(playerImageElement, selectedCharacter);
-  setCharacterImage(enemyImageElement, enemyCharacter);
+  setCharacterImage(playerImageElement, selectedCharacter, "idle");
+  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
   updateSelectedCharacterCard(selectedCharacter);
   selectionScreenElement.classList.add("hidden");
   gameScreenElement.classList.remove("hidden");
@@ -594,8 +531,8 @@ function startGame() {
   enemyNameElement.textContent = "Unknown";
   questionDisplayElement.textContent = "Question: Waiting...";
   battleResultElement.textContent = "Battle result: Ready to fight";
-  setCharacterImage(playerImageElement, "Luke Skywalker");
-  setCharacterImage(enemyImageElement, "Darth Vader");
+  setCharacterImage(playerImageElement, "Luke Skywalker", "idle");
+  setCharacterImage(enemyImageElement, "Darth Vader", "idle");
   updateSelectedCharacterCard("");
   setBattleBackground("theme-space");
   applyOutcomeOverlay("");

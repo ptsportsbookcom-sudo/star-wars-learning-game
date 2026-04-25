@@ -11,7 +11,6 @@ const musicToggleButton = document.getElementById("musicToggleBtn");
 
 let selectedCharacter = "";
 let gameState = "idle";
-let characterSelected = false;
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
@@ -57,10 +56,16 @@ function speakMessage(message) {
   statusElement.textContent = message;
 }
 
+function setGameState(nextState) {
+  if (gameState !== nextState) {
+    console.log(`STATE: ${gameState} -> ${nextState}`);
+    gameState = nextState;
+  }
+}
+
 function startGame() {
   alert("Game started");
-  gameState = "waiting_for_character";
-  characterSelected = false;
+  setGameState("waiting_for_character");
   selectedCharacter = "";
   selectionResultElement.textContent = "You chose: ...";
   updateSelectedCharacterCard("");
@@ -161,7 +166,6 @@ if (!SpeechRecognition) {
 
     const cleanedTranscript = finalTranscript.trim();
     console.log("FINAL:", cleanedTranscript);
-    console.log("TRANSCRIPT:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
     }`;
@@ -171,7 +175,6 @@ if (!SpeechRecognition) {
       return;
     }
 
-    console.log("STATE:", gameState);
     isProcessing = true;
 
     try {
@@ -187,22 +190,22 @@ if (!SpeechRecognition) {
       }
 
       if (gameState === "waiting_for_character") {
-        if (characterSelected) {
-          return;
-        }
-
         const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
 
         if (matchedCharacter) {
           selectedCharacter = matchedCharacter;
-          characterSelected = true;
-          gameState = "in_game";
+          setGameState("in_game");
           selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
           updateSelectedCharacterCard(selectedCharacter);
           speakMessage("Get ready...");
         } else {
           speakMessage("I didn't understand, try again");
         }
+        return;
+      }
+
+      if (gameState === "in_game") {
+        return;
       }
     } finally {
       isProcessing = false;

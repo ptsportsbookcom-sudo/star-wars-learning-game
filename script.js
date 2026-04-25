@@ -26,7 +26,6 @@ let gameState = "idle";
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
-let isProcessing = false;
 let appIsActive = true;
 let restartPending = false;
 let musicEnabled = true;
@@ -35,6 +34,7 @@ let nextRoundTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
+let ignoreSpeechUntil = 0;
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -211,11 +211,9 @@ function handleCorrectAnswer() {
   nextRoundTimeout = setTimeout(() => {
     console.log("ANSWER DONE");
     console.log("STATE:", gameState);
-    console.log("isProcessing:", isProcessing);
     console.log("NEXT QUESTION TRIGGERED");
-    isProcessing = false;
     generateQuestion();
-  }, 1200);
+  }, 1000);
 }
 
 function handleWrongAnswer() {
@@ -226,19 +224,23 @@ function handleWrongAnswer() {
   nextRoundTimeout = setTimeout(() => {
     console.log("ANSWER DONE");
     console.log("STATE:", gameState);
-    console.log("isProcessing:", isProcessing);
     console.log("NEXT QUESTION TRIGGERED");
-    isProcessing = false;
     generateQuestion();
-  }, 1200);
+  }, 1000);
 }
 
 function speakMessage(message) {
+  ignoreSpeechUntil = Date.now() + 900;
   if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
     const isVillain = VILLAINS.includes(selectedCharacter);
     utterance.rate = isVillain ? 0.82 : 0.85;
     utterance.pitch = isVillain ? 0.7 : 0.8;
+    utterance.onend = () => {
+      // Keep a short extra buffer to avoid capturing tail audio.
+      ignoreSpeechUntil = Date.now() + 200;
+    };
     window.speechSynthesis.speak(utterance);
   }
   statusElement.textContent = message;
@@ -333,11 +335,17 @@ function getNumberFromSpeech(text) {
   const combined = `${lower} ${normalized}`;
 
   const map = [
+    { value: 0, keys: ["0", "zero", "μηδέν", "miden"] },
     { value: 1, keys: ["1", "one", "ένα", "ena"] },
-    { value: 2, keys: ["2", "two", "δύο", "dio"] },
+    { value: 2, keys: ["2", "two", "δύο", "dio", "duo"] },
     { value: 3, keys: ["3", "three", "τρία", "tria"] },
     { value: 4, keys: ["4", "four", "τέσσερα", "tessera"] },
     { value: 5, keys: ["5", "five", "πέντε", "pente"] },
+    { value: 6, keys: ["6", "six", "έξι", "exi"] },
+    { value: 7, keys: ["7", "seven", "επτά", "epta"] },
+    { value: 8, keys: ["8", "eight", "οκτώ", "okto"] },
+    { value: 9, keys: ["9", "nine", "εννιά", "εννέα", "ennia", "ennea"] },
+    { value: 10, keys: ["10", "ten", "δέκα", "deka"] },
   ];
 
   for (const item of map) {
@@ -449,7 +457,7 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
-    if (isProcessing) {
+    if (Date.now() < ignoreSpeechUntil) {
       return;
     }
 
@@ -473,57 +481,44 @@ if (!SpeechRecognition) {
     }
 
     console.log("STATE:", gameState);
-    isProcessing = true;
-    let answerProcessed = false;
 
-    try {
-      if (gameState === "idle") {
-        const startMatch = allowedCommands.some((command) =>
-          normalizedTranscript.includes(command)
-        );
-        console.log("MATCH:", startMatch ? "start" : "none");
-        if (startMatch) {
-          startGame();
-        }
+    if (gameState === "idle") {
+      const startMatch = allowedCommands.some((command) =>
+        normalizedTranscript.includes(command)
+      );
+      if (startMatch) {
+        startGame();
+      }
+      return;
+    }
+
+    if (gameState === "choose_character") {
+      const character = getCharacterFromSpeech(cleanedTranscript);
+      console.log("CHARACTER MATCH:", character);
+      if (character) {
+        selectCharacter(character);
+      }
+      return;
+    }
+
+    if (gameState === "answer") {
+      if (answerLocked) {
         return;
       }
 
-      if (gameState === "choose_character") {
-        const character = getCharacterFromSpeech(cleanedTranscript);
-        console.log("CHARACTER MATCH:", character);
+      const spokenNumber = getNumberFromSpeech(cleanedTranscript);
+      console.log("NUMBER:", spokenNumber);
+      console.log("EXPECTED:", currentQuestion ? currentQuestion.answer : null);
 
-        if (character) {
-          selectCharacter(character);
-        }
+      if (spokenNumber === null || !currentQuestion) {
         return;
       }
 
-      if (gameState === "answer") {
-        if (answerLocked) {
-          return;
-        }
-        const spokenNumber = getNumberFromSpeech(cleanedTranscript);
-        console.log("NUMBER MATCH:", spokenNumber);
-        if (spokenNumber === null || !currentQuestion) {
-          return;
-        }
-
-        console.log("USER ANSWER:", spokenNumber);
-        console.log("CORRECT:", currentQuestion.answer);
-        answerLocked = true;
-        if (spokenNumber === currentQuestion.answer) {
-          handleCorrectAnswer();
-        } else {
-          handleWrongAnswer();
-        }
-        answerProcessed = true;
-        console.log("ANSWER PROCESSED");
-        console.log("STATE:", gameState);
-        console.log("isProcessing:", isProcessing);
-      }
-    } finally {
-      if (!answerProcessed) {
-        isProcessing = false;
+      answerLocked = true;
+      if (spokenNumber === currentQuestion.answer) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
       }
     }
   };

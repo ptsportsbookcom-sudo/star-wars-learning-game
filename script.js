@@ -15,6 +15,9 @@ let characterSelected = false;
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
+let isProcessing = false;
+let appIsActive = true;
+let restartPending = false;
 let musicEnabled = true;
 
 bgMusicElement.volume = 0.2;
@@ -125,6 +128,7 @@ if (!SpeechRecognition) {
     }
     voiceActivated = true;
     shouldKeepListening = true;
+    appIsActive = true;
     hideListeningButton();
     voiceEnablePrompt.classList.add("hidden");
     setWaitingStatus();
@@ -143,58 +147,65 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
+    if (isProcessing) {
+      return;
+    }
+
     let combinedTranscript = "";
 
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      if (!event.results[i].isFinal) {
+        return;
+      }
       combinedTranscript += event.results[i][0].transcript;
     }
 
     const cleanedTranscript = combinedTranscript.trim();
-    console.log("Transcript:", cleanedTranscript);
+    console.log("TRANSCRIPT:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
     }`;
 
     const normalizedTranscript = normalizeTranscript(cleanedTranscript);
-    const hasFinalResult = Array.from(event.results).some(
-      (result) => result.isFinal
-    );
-
-    if (!hasFinalResult || !normalizedTranscript) {
+    if (!normalizedTranscript) {
       return;
     }
 
     console.log("STATE:", gameState);
+    isProcessing = true;
 
-    if (characterSelected) {
-      return;
-    }
-
-    if (gameState !== "waiting_for_character") {
-      const shouldStartGame = allowedCommands.some((command) =>
-        normalizedTranscript.includes(command)
-      );
-
-      if (shouldStartGame) {
-        startGame();
+    try {
+      if (characterSelected) {
+        return;
       }
-      return;
-    }
 
-    if (gameState === "waiting_for_character") {
-      const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
+      if (gameState !== "waiting_for_character") {
+        const shouldStartGame = allowedCommands.some((command) =>
+          normalizedTranscript.includes(command)
+        );
 
-      if (matchedCharacter) {
-        selectedCharacter = matchedCharacter;
-        characterSelected = true;
-        gameState = "in_game";
-        selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
-        updateSelectedCharacterCard(selectedCharacter);
-        speakMessage("Get ready...");
-      } else {
-        speakMessage("I didn't understand, try again");
+        if (shouldStartGame) {
+          startGame();
+        }
+        return;
       }
-      return;
+
+      if (gameState === "waiting_for_character") {
+        const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
+
+        if (matchedCharacter) {
+          selectedCharacter = matchedCharacter;
+          characterSelected = true;
+          gameState = "in_game";
+          selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
+          updateSelectedCharacterCard(selectedCharacter);
+          speakMessage("Get ready...");
+        } else {
+          speakMessage("I didn't understand, try again");
+        }
+      }
+    } finally {
+      isProcessing = false;
     }
   };
 
@@ -204,6 +215,7 @@ if (!SpeechRecognition) {
     if (event.error === "not-allowed" || event.error === "service-not-allowed") {
       shouldKeepListening = false;
       voiceActivated = false;
+      appIsActive = false;
       voiceEnablePrompt.classList.remove("hidden");
       statusElement.textContent = "Tap anywhere once to enable voice";
       return;
@@ -214,13 +226,22 @@ if (!SpeechRecognition) {
 
   recognition.onend = () => {
     isRecognitionRunning = false;
+    restartPending = false;
 
-    if (shouldKeepListening) {
+    if (shouldKeepListening && appIsActive && !isProcessing) {
       recognition.lang = languageSelect.value;
+      restartPending = true;
       setTimeout(() => {
-        if (!isRecognitionRunning && shouldKeepListening) {
+        if (
+          restartPending &&
+          !isRecognitionRunning &&
+          shouldKeepListening &&
+          appIsActive &&
+          !isProcessing
+        ) {
           recognition.start();
         }
+        restartPending = false;
       }, 250);
     } else {
       if (voiceEnablePrompt.classList.contains("hidden")) {

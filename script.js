@@ -75,19 +75,17 @@ bgMusicElement.volume = 0.2;
 function playBackgroundMusic() {
   if (!musicEnabled) return;
 
-  // if already playing, do nothing
-  if (!bgMusicElement.paused) return;
+  if (!bgMusicElement.src) {
+    bgMusicElement.src = "audio/music1.mp3"; // fallback track
+  }
 
-  // pick random track
-  const nextTrack = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
-
-  currentTrack = nextTrack;
-  bgMusicElement.src = nextTrack;
   bgMusicElement.volume = 0.2;
   bgMusicElement.loop = true;
 
-  bgMusicElement.play().catch(() => {
-    console.log("Autoplay blocked");
+  bgMusicElement.play().then(() => {
+    console.log("Music playing");
+  }).catch((err) => {
+    console.log("Music blocked:", err);
   });
 }
 
@@ -453,28 +451,22 @@ function getNumberFromSpeech(text) {
 
   console.log("CHECKING:", normalized);
 
-  // DIGIT fallback
+  // digit fallback
   const digitMatch = normalized.match(/\d+/);
   if (digitMatch) return parseInt(digitMatch[0], 10);
 
-  const map = [
-    { value: 1, keys: ["one", "ena"] },
-    { value: 2, keys: ["two", "dio", "duo"] },
-    { value: 3, keys: ["three", "tria"] },
-    { value: 4, keys: ["four", "tessera", "tesera"] },
-    { value: 5, keys: ["five", "pente"] },
-    { value: 6, keys: ["six", "exi"] },
-    { value: 7, keys: ["seven", "epta"] },
-    { value: 8, keys: ["eight", "okto", "octo"] },
-    { value: 9, keys: ["nine", "ennia", "ennea", "enya"] },
-    { value: 10, keys: ["ten", "deka"] },
-  ];
+  if (normalized.includes("one") || normalized.includes("ena")) return 1;
+  if (normalized.includes("two") || normalized.includes("dio") || normalized.includes("duo")) return 2;
+  if (normalized.includes("three") || normalized.includes("tria")) return 3;
+  if (normalized.includes("four") || normalized.includes("tessera") || normalized.includes("tesera")) return 4;
+  if (normalized.includes("five") || normalized.includes("pente")) return 5;
+  if (normalized.includes("six") || normalized.includes("exi")) return 6;
 
-  for (const item of map) {
-    if (item.keys.some((k) => normalized.includes(k))) {
-      return item.value;
-    }
-  }
+  // IMPORTANT FIXES
+  if (normalized.includes("seven") || normalized.includes("efta") || normalized.includes("epta")) return 7;
+  if (normalized.includes("eight") || normalized.includes("okto") || normalized.includes("oktoh")) return 8;
+  if (normalized.includes("nine") || normalized.includes("ennia") || normalized.includes("ennea") || normalized.includes("enya")) return 9;
+  if (normalized.includes("ten") || normalized.includes("deka")) return 10;
 
   return null;
 }
@@ -642,7 +634,12 @@ if (!SpeechRecognition) {
       console.log("NUMBER:", spokenNumber);
       console.log("EXPECTED:", currentQuestion ? currentQuestion.answer : null);
 
-      if (spokenNumber === null || !currentQuestion) {
+      if (spokenNumber === null) {
+        console.log("NO MATCH — ignoring");
+        return;
+      }
+
+      if (!currentQuestion) {
         return;
       }
 
@@ -686,10 +683,8 @@ if (!SpeechRecognition) {
     playBackgroundMusic();
     startContinuousVoiceMode();
     window.removeEventListener("pointerdown", handleFirstInteraction);
-    window.removeEventListener("keydown", handleFirstInteraction);
   }
 
   window.addEventListener("pointerdown", handleFirstInteraction);
-  window.addEventListener("keydown", handleFirstInteraction);
   statusElement.textContent = "Tap once, then speak.";
 }

@@ -72,10 +72,26 @@ const ALPHABET_IMAGES = [
   "Images/r2d2.png",
 ];
 const OBJECTS = [
-  { name: "apple", el: "μηλο", img: "objects/apple.png" },
-  { name: "dog", el: "σκυλος", img: "objects/dog.png" },
-  { name: "car", el: "αυτοκινητο", img: "objects/car.png" },
-  { name: "cat", el: "γατα", img: "objects/cat.png" },
+  { name: "apple", el: "μηλο", alt: ["milo"], img: "https://source.unsplash.com/300x300/?apple" },
+  { name: "dog", el: "σκυλος", alt: ["skilos", "skylos"], img: "https://source.unsplash.com/300x300/?dog" },
+  { name: "cat", el: "γατα", alt: ["gata"], img: "https://source.unsplash.com/300x300/?cat" },
+  { name: "car", el: "αυτοκινητο", alt: ["aftokinito"], img: "https://source.unsplash.com/300x300/?car" },
+  { name: "banana", el: "μπανανα", alt: ["banana"], img: "https://source.unsplash.com/300x300/?banana" },
+  { name: "house", el: "σπιτι", alt: ["spiti"], img: "https://source.unsplash.com/300x300/?house" },
+  { name: "tree", el: "δεντρο", alt: ["dentro"], img: "https://source.unsplash.com/300x300/?tree" },
+  { name: "phone", el: "τηλεφωνο", alt: ["tilefono"], img: "https://source.unsplash.com/300x300/?phone" },
+  { name: "book", el: "βιβλιο", alt: ["vivlio"], img: "https://source.unsplash.com/300x300/?book" },
+  { name: "chair", el: "καρεκλα", alt: ["karekla"], img: "https://source.unsplash.com/300x300/?chair" },
+  { name: "table", el: "τραπεζι", alt: ["trapezi"], img: "https://source.unsplash.com/300x300/?table" },
+  { name: "bike", el: "ποδηλατο", alt: ["podilato"], img: "https://source.unsplash.com/300x300/?bicycle" },
+  { name: "bus", el: "λεωφορειο", alt: ["leoforeio"], img: "https://source.unsplash.com/300x300/?bus" },
+  { name: "train", el: "τρενο", alt: ["treno"], img: "https://source.unsplash.com/300x300/?train" },
+  { name: "plane", el: "αεροπλανο", alt: ["aeroplano"], img: "https://source.unsplash.com/300x300/?airplane" },
+  { name: "boat", el: "βαρκα", alt: ["varka"], img: "https://source.unsplash.com/300x300/?boat" },
+  { name: "fish", el: "ψαρι", alt: ["psari"], img: "https://source.unsplash.com/300x300/?fish" },
+  { name: "bird", el: "πουλι", alt: ["pouli"], img: "https://source.unsplash.com/300x300/?bird" },
+  { name: "cow", el: "αγελαδα", alt: ["agelada"], img: "https://source.unsplash.com/300x300/?cow" },
+  { name: "horse", el: "αλογο", alt: ["alogo"], img: "https://source.unsplash.com/300x300/?horse" }
 ];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": "Images/Luke.png",
@@ -403,6 +419,7 @@ function generateQuestion() {
     currentQuestion = {
       type: "object",
       answers: [obj.name.toLowerCase(), obj.el.toLowerCase()],
+      alt: obj.alt || [],
     };
 
     answerLocked = false;
@@ -460,6 +477,13 @@ function normalizeVoiceTranscript(text) {
     .replace(/[^\w\s\u0370-\u03ff]/g, " ")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+function normalizeGreek(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function getCharacterFromSpeech(text) {
@@ -665,8 +689,14 @@ if (!SpeechRecognition) {
       }
 
       if (currentQuestion && currentQuestion.type === "alphabet") {
-        const answer = cleanedTranscript.toLowerCase();
-        const isCorrect = currentQuestion.answers.some((a) => answer.includes(a));
+        const answer = normalizeGreek(cleanedTranscript);
+        const allAnswers = [
+          ...currentQuestion.answers,
+          ...(currentQuestion.alt || []),
+        ];
+        const isCorrect = allAnswers.some((a) =>
+          answer.includes(normalizeGreek(a))
+        );
 
         answerLocked = true;
         if (isCorrect) {
@@ -678,10 +708,13 @@ if (!SpeechRecognition) {
       }
 
       if (currentQuestion && currentQuestion.type === "object") {
-        const answer = cleanedTranscript.toLowerCase();
-
-        const isCorrect = currentQuestion.answers.some((a) =>
-          answer.includes(a)
+        const answer = normalizeGreek(cleanedTranscript);
+        const allAnswers = [
+          ...currentQuestion.answers,
+          ...(currentQuestion.alt || []),
+        ];
+        const isCorrect = allAnswers.some((a) =>
+          answer.includes(normalizeGreek(a))
         );
 
         answerLocked = true;

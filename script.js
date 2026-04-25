@@ -33,6 +33,7 @@ let musicEnabled = true;
 let currentQuestionAnswer = null;
 let nextRoundTimeout = null;
 let currentBackgroundTheme = "theme-space";
+let answerLocked = false;
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -232,70 +233,69 @@ function getRandomInt(min, max) {
 }
 
 function askNextQuestion() {
-  const left = getRandomInt(1, 5);
-  const right = getRandomInt(1, 5);
+  const left = getRandomInt(1, 3);
+  const right = getRandomInt(1, 3);
   currentQuestionAnswer = left + right;
+  answerLocked = false;
   questionDisplayElement.textContent = `${left} + ${right} = ?`;
   battleResultElement.textContent = "Battle result: Ready to fight";
   setQuestionBackground();
-  setGameState("waiting_for_answer");
+  setGameState("answer");
   speakMessage(`What is ${left} plus ${right}?`);
 }
 
-function parseAnswerFromTranscript(normalizedTranscript) {
-  const directDigitMatch = normalizedTranscript.match(/\b\d+\b/);
-  if (directDigitMatch) {
-    return Number(directDigitMatch[0]);
-  }
-
-  const numberWords = {
+function normalizeGreekNumbers(token) {
+  const numberMap = {
     one: 1,
     two: 2,
     three: 3,
-    four: 4,
-    five: 5,
-    six: 6,
-    seven: 7,
-    eight: 8,
-    nine: 9,
-    ten: 10,
-    "ένα": 1,
-    "ενα": 1,
-    "δύο": 2,
-    "δυο": 2,
-    "τρία": 3,
-    "τρια": 3,
-    "τέσσερα": 4,
-    "τεσσερα": 4,
-    "πέντε": 5,
-    "πεντε": 5,
-    "έξι": 6,
-    "εξι": 6,
-    "επτά": 7,
-    "επτα": 7,
-    "οκτώ": 8,
-    "οκτω": 8,
-    "εννέα": 9,
-    "εννεα": 9,
-    "δέκα": 10,
-    "δεκα": 10,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    ενα: 1,
+    εναν: 1,
+    ενας: 1,
+    εναςς: 1,
+    εναςσ: 1,
+    δυο: 2,
+    διο: 2,
+    dio: 2,
+    duo: 2,
+    dyo: 2,
+    τρια: 3,
+    tria: 3,
   };
+  return numberMap[token] ?? null;
+}
 
+function parseAnswerFromTranscript(normalizedTranscript) {
   const words = normalizedTranscript.split(" ");
   for (const word of words) {
-    if (numberWords[word]) {
-      return numberWords[word];
+    const match = normalizeGreekNumbers(word);
+    if (match !== null) {
+      return match;
     }
   }
   return null;
 }
 
+function normalizeVoiceTranscript(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s\u0370-\u03ff]/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 function startGame() {
   alert("Game started");
-  setGameState("waiting_for_character");
+  setGameState("choose_character");
   selectedCharacter = "";
   enemyCharacter = "";
   currentQuestionAnswer = null;
+  answerLocked = false;
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
     nextRoundTimeout = null;
@@ -336,21 +336,13 @@ if (!SpeechRecognition) {
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
-  const allowedCommands = ["start game", "ξεκίνα παιχνίδι"];
+  const allowedCommands = ["start", "ξεκινα"];
   const characterMap = [
     { keywords: ["luke"], character: "Luke Skywalker" },
     { keywords: ["vader"], character: "Darth Vader" },
     { keywords: ["emperor"], character: "Emperor" },
     { keywords: ["r2", "r2d2"], character: "R2-D2" },
   ];
-
-  function normalizeTranscript(text) {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s\u0370-\u03ff]/g, " ")
-      .trim()
-      .replace(/\s+/g, " ");
-  }
 
   function findCharacterFromTranscript(normalizedTranscript) {
     const match = characterMap.find((item) =>
@@ -367,11 +359,8 @@ if (!SpeechRecognition) {
     startListeningButton.classList.add("hidden");
   }
 
-  function enableVoiceMode() {
-    if (voiceActivated) {
-      playBackgroundMusic();
-      return;
-    }
+  function startContinuousVoiceMode() {
+    if (voiceActivated) return;
     voiceActivated = true;
     shouldKeepListening = true;
     appIsActive = true;
@@ -386,6 +375,10 @@ if (!SpeechRecognition) {
       recognition.start();
     }
   }
+
+  languageSelect.addEventListener("change", () => {
+    recognition.lang = languageSelect.value;
+  });
 
   recognition.onstart = () => {
     isRecognitionRunning = true;
@@ -406,32 +399,34 @@ if (!SpeechRecognition) {
     }
 
     const cleanedTranscript = finalTranscript.trim();
-    console.log("FINAL:", cleanedTranscript);
+    console.log("HEARD:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
     }`;
 
-    const normalizedTranscript = normalizeTranscript(cleanedTranscript);
+    const normalizedTranscript = normalizeVoiceTranscript(cleanedTranscript);
     if (!normalizedTranscript) {
       return;
     }
 
+    console.log("STATE:", gameState);
     isProcessing = true;
 
     try {
       if (gameState === "idle") {
-        const shouldStartGame = allowedCommands.some((command) =>
+        const startMatch = allowedCommands.some((command) =>
           normalizedTranscript.includes(command)
         );
-
-        if (shouldStartGame) {
+        console.log("MATCH:", startMatch ? "start" : "none");
+        if (startMatch) {
           startGame();
         }
         return;
       }
 
-      if (gameState === "waiting_for_character") {
+      if (gameState === "choose_character") {
         const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
+        console.log("MATCH:", matchedCharacter || "none");
 
         if (matchedCharacter) {
           selectedCharacter = matchedCharacter;
@@ -448,40 +443,38 @@ if (!SpeechRecognition) {
           applyOutcomeOverlay("");
           speakMessage("Get ready");
           askNextQuestion();
-        } else {
-          speakMessage("I didn't understand, try again");
         }
         return;
       }
 
-      if (gameState === "waiting_for_answer") {
+      if (gameState === "answer") {
+        if (answerLocked) {
+          return;
+        }
         const spokenAnswer = parseAnswerFromTranscript(normalizedTranscript);
+        console.log("MATCH:", spokenAnswer ?? "none");
         if (spokenAnswer === null || currentQuestionAnswer === null) {
           return;
         }
 
         const isCorrectAnswer = spokenAnswer === currentQuestionAnswer;
-        setGameState("result");
+        answerLocked = true;
         resolveBattleRound(isCorrectAnswer);
         if (isCorrectAnswer) {
           nextRoundTimeout = setTimeout(() => {
-            if (gameState === "result") {
+            if (gameState === "answer") {
               askNextQuestion();
             }
           }, 1500);
         } else {
           nextRoundTimeout = setTimeout(() => {
-            if (gameState === "result") {
-              setGameState("waiting_for_answer");
+            if (gameState === "answer") {
               setBattleBackground(currentBackgroundTheme);
               applyOutcomeOverlay("");
+              answerLocked = false;
             }
           }, 800);
         }
-        return;
-      }
-
-      if (gameState === "result") {
         return;
       }
     } finally {
@@ -532,21 +525,12 @@ if (!SpeechRecognition) {
 
   function handleFirstInteraction() {
     playBackgroundMusic();
-    enableVoiceMode();
+    startContinuousVoiceMode();
     window.removeEventListener("pointerdown", handleFirstInteraction);
     window.removeEventListener("keydown", handleFirstInteraction);
   }
 
   window.addEventListener("pointerdown", handleFirstInteraction);
   window.addEventListener("keydown", handleFirstInteraction);
-
-  startListeningButton.addEventListener("click", enableVoiceMode);
-
-  // Try auto-start immediately; if blocked, we ask for one tap.
-  try {
-    enableVoiceMode();
-  } catch (error) {
-    voiceEnablePrompt.classList.remove("hidden");
-    statusElement.textContent = "Tap anywhere once to enable voice";
-  }
+  statusElement.textContent = "Tap once, then speak.";
 }

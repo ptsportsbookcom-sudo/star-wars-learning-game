@@ -120,7 +120,12 @@ bgMusicElement.volume = 0.2;
 function playBackgroundMusic() {
   if (!musicEnabled) return;
 
-  bgMusicElement.play().catch((err) => {
+  if (!bgMusicElement.paused) return;
+
+  bgMusicElement.volume = 0.2;
+  bgMusicElement.loop = true;
+
+  bgMusicElement.play().catch(err => {
     console.log("Music failed:", err);
   });
 }

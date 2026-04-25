@@ -9,7 +9,22 @@
   <body>
     <main class="container">
       <h1>Star Wars Learning Game</h1>
-      <button id="startGameBtn" type="button">Start Game</button>
+      <div class="controls">
+        <button id="startGameBtn" type="button">Start Game</button>
+        <button id="startListeningBtn" type="button">Start Listening</button>
+      </div>
+      <div class="voice-panel">
+        <label for="languageSelect">Recognition Language</label>
+        <select id="languageSelect">
+          <option value="en-US">English</option>
+          <option value="el-GR">Greek</option>
+        </select>
+        <p class="hint">
+          Try saying: "start game" or "ξεκίνα παιχνίδι"
+        </p>
+        <p id="listeningStatus">Status: Idle</p>
+        <p id="transcript">You said: ...</p>
+      </div>
     </main>
 
     <script src="script.js"></script>

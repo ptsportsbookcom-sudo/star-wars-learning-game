@@ -6,6 +6,8 @@ const languageSelect = document.getElementById("languageSelect");
 const selectionResultElement = document.getElementById("selectionResult");
 const voiceEnablePrompt = document.getElementById("voiceEnablePrompt");
 const characterGridElement = document.getElementById("characterGrid");
+const bgMusicElement = document.getElementById("bgMusic");
+const musicToggleButton = document.getElementById("musicToggleBtn");
 
 const characters = [
   {
@@ -40,6 +42,28 @@ let characterSelected = false;
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
+let musicEnabled = true;
+
+bgMusicElement.volume = 0.2;
+
+function playBackgroundMusic() {
+  if (!musicEnabled) {
+    return;
+  }
+  bgMusicElement.play().catch(() => {
+    // Playback may still be blocked until user interaction.
+  });
+}
+
+musicToggleButton.addEventListener("click", () => {
+  musicEnabled = !musicEnabled;
+
+  if (musicEnabled) {
+    playBackgroundMusic();
+  } else {
+    bgMusicElement.pause();
+  }
+});
 
 function renderCharacterCards() {
   characterGridElement.innerHTML = characters
@@ -94,6 +118,13 @@ const SpeechRecognition =
 if (!SpeechRecognition) {
   startListeningButton.disabled = true;
   statusElement.textContent = "Speech recognition is not supported in this browser.";
+  const startMusicOnFirstInteraction = () => {
+    playBackgroundMusic();
+    window.removeEventListener("pointerdown", startMusicOnFirstInteraction);
+    window.removeEventListener("keydown", startMusicOnFirstInteraction);
+  };
+  window.addEventListener("pointerdown", startMusicOnFirstInteraction);
+  window.addEventListener("keydown", startMusicOnFirstInteraction);
 } else {
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
@@ -135,6 +166,7 @@ if (!SpeechRecognition) {
 
   function enableVoiceMode() {
     if (voiceActivated) {
+      playBackgroundMusic();
       return;
     }
     voiceActivated = true;
@@ -144,6 +176,7 @@ if (!SpeechRecognition) {
     setWaitingStatus();
     recognition.lang = languageSelect.value;
     transcriptElement.textContent = "You said: ...";
+    playBackgroundMusic();
 
     if (!isRecognitionRunning) {
       recognition.start();
@@ -243,6 +276,7 @@ if (!SpeechRecognition) {
   };
 
   function handleFirstInteraction() {
+    playBackgroundMusic();
     enableVoiceMode();
     window.removeEventListener("pointerdown", handleFirstInteraction);
     window.removeEventListener("keydown", handleFirstInteraction);

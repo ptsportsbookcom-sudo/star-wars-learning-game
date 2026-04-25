@@ -33,10 +33,10 @@ let nextRoundTimeout = null;
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
 const CHARACTER_IMAGES = {
-  "Luke Skywalker": "images/luke.png",
-  "R2-D2": "images/r2d2.png",
-  "Darth Vader": "images/vader.png",
-  Emperor: "images/emperor.png",
+  "Luke Skywalker": "Images/Luke.png",
+  "R2-D2": "Images/r2d2.png",
+  "Darth Vader": "Images/Darth.png",
+  Emperor: "Images/Emperor.png",
 };
 const QUESTION_ICONS = ["🍎", "⭐", "🚀", "🪐", "⚡"];
 
@@ -147,7 +147,9 @@ function setGameState(nextState) {
 }
 
 function setCharacterImage(imgElement, characterName) {
-  imgElement.src = CHARACTER_IMAGES[characterName] || "images/luke.png";
+  const imagePath = CHARACTER_IMAGES[characterName] || "Images/Luke.png";
+  console.log("Loading image:", imagePath);
+  imgElement.src = imagePath;
   imgElement.alt = characterName;
 }
 

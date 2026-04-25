@@ -40,9 +40,36 @@ let gameMode = "math"; // default
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
 const LETTERS = [
-  { en: "A", el: "α", img: "Images/Luke.png" },
-  { en: "B", el: "β", img: "Images/Darth.png" },
-  { en: "C", el: "γ", img: "Images/Emperor.png" },
+  { en: "A", el: "α" },
+  { en: "B", el: "β" },
+  { en: "C", el: "γ" },
+  { en: "D", el: "δ" },
+  { en: "E", el: "ε" },
+  { en: "F", el: "ζ" },
+  { en: "G", el: "η" },
+  { en: "H", el: "θ" },
+  { en: "I", el: "ι" },
+  { en: "J", el: "κ" },
+  { en: "K", el: "λ" },
+  { en: "L", el: "μ" },
+  { en: "M", el: "ν" },
+  { en: "N", el: "ξ" },
+  { en: "O", el: "ο" },
+  { en: "P", el: "π" },
+  { en: "Q", el: "ρ" },
+  { en: "R", el: "σ" },
+  { en: "S", el: "τ" },
+  { en: "T", el: "υ" },
+  { en: "U", el: "φ" },
+  { en: "V", el: "χ" },
+  { en: "W", el: "ψ" },
+  { en: "X", el: "ω" },
+];
+const ALPHABET_IMAGES = [
+  "Images/Luke.png",
+  "Images/Darth.png",
+  "Images/Emperor.png",
+  "Images/r2d2.png",
 ];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": "Images/Luke.png",
@@ -338,26 +365,28 @@ function generateQuestion() {
   console.log("MODE:", gameMode);
 
   if (gameMode === "alphabet") {
-    const randomLetter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+    const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+    const randomImage =
+      ALPHABET_IMAGES[Math.floor(Math.random() * ALPHABET_IMAGES.length)];
 
     currentQuestion = {
       type: "alphabet",
-      answers: [randomLetter.en.toLowerCase(), randomLetter.el.toLowerCase()],
+      answers: [letter.en.toLowerCase(), letter.el.toLowerCase()],
     };
 
     answerLocked = false;
-    questionDisplayElement.textContent = "What letter is this?";
+    questionDisplayElement.textContent = `Say the letter: ${letter.en} (${letter.el})`;
     battleResultElement.textContent = "Battle result: Ready to fight";
     setRandomBackground();
     setQuestionBackground();
 
     if (questionImageElement) {
-      questionImageElement.src = randomLetter.img;
-      questionImageElement.alt = `Letter ${randomLetter.en}`;
+      questionImageElement.src = randomImage;
+      questionImageElement.alt = `Letter ${letter.en}`;
       questionImageElement.classList.remove("hidden");
     }
 
-    speakMessage("What letter is this?");
+    speakMessage(`Say the letter ${letter.en}`);
     setGameState("answer");
     return;
   }

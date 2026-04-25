@@ -12,6 +12,9 @@ const playerCardElement = document.getElementById("playerCard");
 const enemyCardElement = document.getElementById("enemyCard");
 const playerNameElement = document.getElementById("playerName");
 const enemyNameElement = document.getElementById("enemyName");
+const playerImageElement = document.getElementById("playerImage");
+const enemyImageElement = document.getElementById("enemyImage");
+const questionDisplayElement = document.getElementById("questionDisplay");
 const battleResultElement = document.getElementById("battleResult");
 
 let selectedCharacter = "";
@@ -24,9 +27,20 @@ let isProcessing = false;
 let appIsActive = true;
 let restartPending = false;
 let musicEnabled = true;
+let currentQuestionAnswer = null;
+let nextRoundTimeout = null;
 
 const HEROES = ["Luke Skywalker", "Chewbacca", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor", "Darth Maul"];
+const CHARACTER_IMAGES = {
+  "Luke Skywalker": "/images/luke-skywalker.svg",
+  Chewbacca: "/images/chewbacca.svg",
+  "R2-D2": "/images/r2-d2.svg",
+  "Darth Vader": "/images/darth-vader.svg",
+  Emperor: "/images/emperor.svg",
+  "Darth Maul": "/images/darth-maul.svg",
+};
+const QUESTION_ICONS = ["🍎", "⭐", "🚀", "🪐", "⚡"];
 
 bgMusicElement.volume = 0.2;
 
@@ -76,11 +90,18 @@ function getRandomEnemyCharacter(playerCharacter) {
 }
 
 function setBattleBackground(mode) {
-  document.body.classList.remove("battle-mode", "victory-mode", "defeat-mode");
+  document.body.classList.remove(
+    "idle-mode",
+    "battle-mode",
+    "victory-mode",
+    "defeat-mode"
+  );
   if (mode) {
     document.body.classList.add(mode);
   }
 }
+
+setBattleBackground("idle-mode");
 
 function triggerEffect(element, className, durationMs = 450) {
   element.classList.remove(className);
@@ -98,22 +119,18 @@ function resolveBattleRound(isCorrectAnswer) {
 
   if (isCorrectAnswer) {
     battleResultElement.textContent = "You Win!";
+    speakMessage("Correct!");
     setBattleBackground("victory-mode");
     triggerEffect(playerCardElement, "attack");
     triggerEffect(enemyCardElement, "shake");
     triggerEffect(enemyCardElement, "fade", 650);
   } else {
     battleResultElement.textContent = "You Lose!";
+    speakMessage("Wrong!");
     setBattleBackground("defeat-mode");
     triggerEffect(enemyCardElement, "attack");
     triggerEffect(playerCardElement, "shake");
   }
-
-  setTimeout(() => {
-    if (gameState === "in_game") {
-      setBattleBackground("battle-mode");
-    }
-  }, 1200);
 }
 
 function speakMessage(message) {
@@ -131,17 +148,94 @@ function setGameState(nextState) {
   }
 }
 
+function setCharacterImage(imgElement, characterName) {
+  imgElement.src = CHARACTER_IMAGES[characterName] || "/images/unknown.svg";
+  imgElement.alt = characterName;
+}
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function askNextQuestion() {
+  const left = getRandomInt(1, 5);
+  const right = getRandomInt(1, 5);
+  const icon = QUESTION_ICONS[getRandomInt(0, QUESTION_ICONS.length - 1)];
+  currentQuestionAnswer = left + right;
+  questionDisplayElement.textContent = `${icon} + ${icon} = ?`;
+  battleResultElement.textContent = "Battle result: Ready to fight";
+  setBattleBackground("battle-mode");
+  setGameState("waiting_for_answer");
+  speakMessage(`How much is ${left} plus ${right}?`);
+}
+
+function parseAnswerFromTranscript(normalizedTranscript) {
+  const directDigitMatch = normalizedTranscript.match(/\b\d+\b/);
+  if (directDigitMatch) {
+    return Number(directDigitMatch[0]);
+  }
+
+  const numberWords = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    "ένα": 1,
+    "ενα": 1,
+    "δύο": 2,
+    "δυο": 2,
+    "τρία": 3,
+    "τρια": 3,
+    "τέσσερα": 4,
+    "τεσσερα": 4,
+    "πέντε": 5,
+    "πεντε": 5,
+    "έξι": 6,
+    "εξι": 6,
+    "επτά": 7,
+    "επτα": 7,
+    "οκτώ": 8,
+    "οκτω": 8,
+    "εννέα": 9,
+    "εννεα": 9,
+    "δέκα": 10,
+    "δεκα": 10,
+  };
+
+  const words = normalizedTranscript.split(" ");
+  for (const word of words) {
+    if (numberWords[word]) {
+      return numberWords[word];
+    }
+  }
+  return null;
+}
+
 function startGame() {
   alert("Game started");
   setGameState("waiting_for_character");
   selectedCharacter = "";
   enemyCharacter = "";
+  currentQuestionAnswer = null;
+  if (nextRoundTimeout) {
+    clearTimeout(nextRoundTimeout);
+    nextRoundTimeout = null;
+  }
   selectionResultElement.textContent = "You chose: ...";
   playerNameElement.textContent = "Waiting for selection...";
   enemyNameElement.textContent = "Unknown";
-  battleResultElement.textContent = "Battle result: Waiting for battle...";
+  questionDisplayElement.textContent = "Question: Waiting...";
+  battleResultElement.textContent = "Battle result: Ready to fight";
+  setCharacterImage(playerImageElement, "Luke Skywalker");
+  setCharacterImage(enemyImageElement, "Darth Vader");
   updateSelectedCharacterCard("");
-  setBattleBackground("");
+  setBattleBackground("idle-mode");
   speakMessage("Choose your character by saying their name");
 }
 
@@ -268,37 +362,39 @@ if (!SpeechRecognition) {
         if (matchedCharacter) {
           selectedCharacter = matchedCharacter;
           enemyCharacter = getRandomEnemyCharacter(selectedCharacter);
-          setGameState("in_game");
           selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
           playerNameElement.textContent = selectedCharacter;
           enemyNameElement.textContent = enemyCharacter;
-          battleResultElement.textContent = "Battle result: Ready to fight!";
+          setCharacterImage(playerImageElement, selectedCharacter);
+          setCharacterImage(enemyImageElement, enemyCharacter);
           updateSelectedCharacterCard(selectedCharacter);
           setBattleBackground("battle-mode");
-          speakMessage("Get ready...");
+          speakMessage("Get ready");
+          askNextQuestion();
         } else {
           speakMessage("I didn't understand, try again");
         }
         return;
       }
 
-      if (gameState === "in_game") {
-        const isCorrectAnswer =
-          normalizedTranscript.includes("correct") ||
-          normalizedTranscript.includes("right") ||
-          normalizedTranscript.includes("σωστό") ||
-          normalizedTranscript.includes("σωστο");
-        const isWrongAnswer =
-          normalizedTranscript.includes("wrong") ||
-          normalizedTranscript.includes("incorrect") ||
-          normalizedTranscript.includes("λάθος") ||
-          normalizedTranscript.includes("λαθος");
-
-        if (isCorrectAnswer) {
-          resolveBattleRound(true);
-        } else if (isWrongAnswer) {
-          resolveBattleRound(false);
+      if (gameState === "waiting_for_answer") {
+        const spokenAnswer = parseAnswerFromTranscript(normalizedTranscript);
+        if (spokenAnswer === null || currentQuestionAnswer === null) {
+          return;
         }
+
+        const isCorrectAnswer = spokenAnswer === currentQuestionAnswer;
+        setGameState("result");
+        resolveBattleRound(isCorrectAnswer);
+        nextRoundTimeout = setTimeout(() => {
+          if (gameState === "result") {
+            askNextQuestion();
+          }
+        }, 1200);
+        return;
+      }
+
+      if (gameState === "result") {
         return;
       }
     } finally {

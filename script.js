@@ -205,10 +205,32 @@ function resolveBattleRound(isCorrectAnswer) {
 
 function handleCorrectAnswer() {
   resolveBattleRound(true);
+  if (nextRoundTimeout) {
+    clearTimeout(nextRoundTimeout);
+  }
+  nextRoundTimeout = setTimeout(() => {
+    console.log("ANSWER DONE");
+    console.log("STATE:", gameState);
+    console.log("isProcessing:", isProcessing);
+    console.log("NEXT QUESTION TRIGGERED");
+    isProcessing = false;
+    generateQuestion();
+  }, 1200);
 }
 
 function handleWrongAnswer() {
   resolveBattleRound(false);
+  if (nextRoundTimeout) {
+    clearTimeout(nextRoundTimeout);
+  }
+  nextRoundTimeout = setTimeout(() => {
+    console.log("ANSWER DONE");
+    console.log("STATE:", gameState);
+    console.log("isProcessing:", isProcessing);
+    console.log("NEXT QUESTION TRIGGERED");
+    isProcessing = false;
+    generateQuestion();
+  }, 1200);
 }
 
 function speakMessage(message) {
@@ -498,18 +520,6 @@ if (!SpeechRecognition) {
         console.log("ANSWER PROCESSED");
         console.log("STATE:", gameState);
         console.log("isProcessing:", isProcessing);
-
-        setTimeout(() => {
-          isProcessing = false;
-          console.log("isProcessing:", isProcessing);
-        }, 300);
-
-        nextRoundTimeout = setTimeout(() => {
-          if (gameState === "answer") {
-            generateQuestion();
-          }
-        }, 1500);
-        return;
       }
     } finally {
       if (!answerProcessed) {

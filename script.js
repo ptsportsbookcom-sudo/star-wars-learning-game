@@ -40,9 +40,9 @@ let gameMode = "math"; // default
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
 const LETTERS = [
-  { en: "A", el: "α", img: "Images/a.png" },
-  { en: "B", el: "β", img: "Images/b.png" },
-  { en: "C", el: "γ", img: "Images/c.png" },
+  { en: "A", el: "α", img: "Images/Luke.png" },
+  { en: "B", el: "β", img: "Images/Darth.png" },
+  { en: "C", el: "γ", img: "Images/Emperor.png" },
 ];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": "Images/Luke.png",
@@ -64,28 +64,15 @@ const BACKGROUND_IMAGES = [
   "Images/e.png",
   "Images/f.png",
 ];
-const MUSIC_TRACKS = [
-  "audio/music1.mp3",
-  "audio/music2.mp3",
-  "audio/music3.mp3",
-];
-let currentTrack = "";
+bgMusicElement.src = "audio/music.mp3";
+bgMusicElement.loop = true;
 bgMusicElement.volume = 0.2;
 
 function playBackgroundMusic() {
   if (!musicEnabled) return;
 
-  if (!bgMusicElement.src) {
-    bgMusicElement.src = "audio/music1.mp3"; // fallback track
-  }
-
-  bgMusicElement.volume = 0.2;
-  bgMusicElement.loop = true;
-
-  bgMusicElement.play().then(() => {
-    console.log("Music playing");
-  }).catch((err) => {
-    console.log("Music blocked:", err);
+  bgMusicElement.play().catch((err) => {
+    console.log("Music failed:", err);
   });
 }
 

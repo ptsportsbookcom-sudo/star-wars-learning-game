@@ -49,6 +49,7 @@ body.theme-battle {
   text-align: center;
   padding: 2rem;
   width: min(92vw, 760px);
+  max-width: 500px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -345,13 +346,14 @@ body.flash-lose::after {
 }
 
 #questionDisplay {
-  font-size: clamp(3rem, 9vw, 4.4rem);
+  font-size: 48px;
   text-align: center;
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: 0.03em;
   padding: 0.8rem 0;
-  margin: 0.35rem 0 0.55rem;
+  margin-top: 10px;
+  margin-bottom: 0.55rem;
   text-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
 }
 
@@ -368,6 +370,14 @@ body.flash-lose::after {
   object-fit: contain;
   margin: 0.4rem auto 0.1rem;
   display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.question-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 #battleResult {

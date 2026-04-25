@@ -35,7 +35,7 @@ let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
 let ignoreSpeechUntil = 0;
-let gameMode = "math"; // default
+let gameMode = "math"; // math | alphabet | object
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -70,6 +70,12 @@ const ALPHABET_IMAGES = [
   "Images/Darth.png",
   "Images/Emperor.png",
   "Images/r2d2.png",
+];
+const OBJECTS = [
+  { name: "apple", el: "μηλο", img: "objects/apple.png" },
+  { name: "dog", el: "σκυλος", img: "objects/dog.png" },
+  { name: "car", el: "αυτοκινητο", img: "objects/car.png" },
+  { name: "cat", el: "γατα", img: "objects/cat.png" },
 ];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": "Images/Luke.png",
@@ -361,7 +367,7 @@ function getRandomInt(min, max) {
 }
 
 function generateQuestion() {
-  gameMode = Math.random() > 0.5 ? "math" : "alphabet";
+  gameMode = ["math", "alphabet", "object"][Math.floor(Math.random() * 3)];
   console.log("MODE:", gameMode);
 
   if (gameMode === "alphabet") {
@@ -387,6 +393,31 @@ function generateQuestion() {
     }
 
     speakMessage(`Say the letter ${letter.en}`);
+    setGameState("answer");
+    return;
+  }
+
+  if (gameMode === "object") {
+    const obj = OBJECTS[Math.floor(Math.random() * OBJECTS.length)];
+
+    currentQuestion = {
+      type: "object",
+      answers: [obj.name.toLowerCase(), obj.el.toLowerCase()],
+    };
+
+    answerLocked = false;
+    questionDisplayElement.textContent = "What is this?";
+    battleResultElement.textContent = "Battle result: Ready to fight";
+    setRandomBackground();
+    setQuestionBackground();
+
+    if (questionImageElement) {
+      questionImageElement.src = obj.img;
+      questionImageElement.alt = obj.name;
+      questionImageElement.classList.remove("hidden");
+    }
+
+    speakMessage("What is this?");
     setGameState("answer");
     return;
   }
@@ -643,6 +674,23 @@ if (!SpeechRecognition) {
         } else {
           handleWrongAnswer();
         }
+        return;
+      }
+
+      if (currentQuestion && currentQuestion.type === "object") {
+        const answer = cleanedTranscript.toLowerCase();
+
+        const isCorrect = currentQuestion.answers.some((a) =>
+          answer.includes(a)
+        );
+
+        answerLocked = true;
+        if (isCorrect) {
+          handleCorrectAnswer();
+        } else {
+          handleWrongAnswer();
+        }
+
         return;
       }
 

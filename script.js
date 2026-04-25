@@ -203,6 +203,12 @@ function resolveBattleRound(isCorrectAnswer) {
 }
 
 function handleCorrectAnswer() {
+  playerImageElement.classList.remove("lose-effect");
+  playerImageElement.classList.add("win-effect");
+  setTimeout(() => {
+    playerImageElement.classList.remove("win-effect");
+  }, 500);
+
   resolveBattleRound(true);
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
@@ -216,6 +222,12 @@ function handleCorrectAnswer() {
 }
 
 function handleWrongAnswer() {
+  playerImageElement.classList.remove("win-effect");
+  playerImageElement.classList.add("lose-effect");
+  setTimeout(() => {
+    playerImageElement.classList.remove("lose-effect");
+  }, 500);
+
   resolveBattleRound(false);
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);

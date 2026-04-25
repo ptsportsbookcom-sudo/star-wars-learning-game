@@ -352,7 +352,7 @@ function generateQuestion() {
     };
 
     answerLocked = false;
-    questionDisplayElement.textContent = `Say the letter: ${letter.en} (${letter.el})`;
+    questionDisplayElement.textContent = "Say this letter";
     battleResultElement.textContent = "Battle result: Ready to fight";
     setRandomBackground();
     setQuestionBackground();
@@ -363,7 +363,7 @@ function generateQuestion() {
       questionImageElement.classList.remove("hidden");
     }
 
-    speakMessage(`Say the letter ${letter.en}`);
+    speakMessage("Say the letter");
     setGameState("answer");
     return;
   }
@@ -607,6 +607,12 @@ if (!SpeechRecognition) {
     }
 
     const cleanedTranscript = combinedTranscript.trim();
+    const cleanedFinalTranscript = cleanedTranscript;
+    console.log("----------");
+    console.log("RAW:", combinedTranscript);
+    console.log("FINAL:", cleanedFinalTranscript);
+    console.log("MODE:", gameMode);
+    console.log("QUESTION:", currentQuestion);
     console.log("HEARD:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
@@ -644,6 +650,8 @@ if (!SpeechRecognition) {
       }
 
       if (currentQuestion && currentQuestion.type === "alphabet") {
+        console.log("ALPHABET HEARD:", cleanedFinalTranscript);
+        console.log("VALID ANSWERS:", currentQuestion?.answers);
         const answer = normalizeGreek(cleanedTranscript);
         const allAnswers = [
           ...currentQuestion.answers,
@@ -663,6 +671,8 @@ if (!SpeechRecognition) {
       }
 
       if (currentQuestion && currentQuestion.type === "object") {
+        console.log("OBJECT HEARD:", cleanedFinalTranscript);
+        console.log("VALID ANSWERS:", currentQuestion?.answers);
         const answer = normalizeGreek(cleanedTranscript);
         const allAnswers = [
           ...currentQuestion.answers,
@@ -683,8 +693,8 @@ if (!SpeechRecognition) {
       }
 
       const spokenNumber = getNumberFromSpeech(cleanedTranscript);
-      console.log("NUMBER:", spokenNumber);
-      console.log("EXPECTED:", currentQuestion ? currentQuestion.answer : null);
+      console.log("NUMBER DETECTED:", spokenNumber);
+      console.log("EXPECTED:", currentQuestion?.answer);
 
       if (spokenNumber === null) {
         console.log("NO MATCH — ignoring");

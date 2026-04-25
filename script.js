@@ -30,10 +30,11 @@ let isProcessing = false;
 let appIsActive = true;
 let restartPending = false;
 let musicEnabled = true;
-let currentQuestionAnswer = null;
+let currentQuestion = null;
 let nextRoundTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
+let lastQuestion = "";
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -202,6 +203,14 @@ function resolveBattleRound(isCorrectAnswer) {
   }
 }
 
+function handleCorrectAnswer() {
+  resolveBattleRound(true);
+}
+
+function handleWrongAnswer() {
+  resolveBattleRound(false);
+}
+
 function speakMessage(message) {
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(message);
@@ -232,16 +241,30 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function askNextQuestion() {
-  const left = getRandomInt(1, 3);
-  const right = getRandomInt(1, 3);
-  currentQuestionAnswer = left + right;
+function generateQuestion() {
+  const a = getRandomInt(1, 5);
+  const b = getRandomInt(1, 5);
+  const key = `${a}-${b}`;
+
+  if (key === lastQuestion) {
+    generateQuestion();
+    return;
+  }
+
+  lastQuestion = key;
+  currentQuestion = {
+    a,
+    b,
+    answer: a + b,
+  };
+
   answerLocked = false;
-  questionDisplayElement.textContent = `${left} + ${right} = ?`;
+  questionDisplayElement.textContent = `${a} + ${b} = ?`;
   battleResultElement.textContent = "Battle result: Ready to fight";
   setQuestionBackground();
   setGameState("answer");
-  speakMessage(`What is ${left} plus ${right}?`);
+  speakMessage(`What is ${a} plus ${b}?`);
+  console.log("NEW QUESTION:", a, b, "=", currentQuestion.answer);
 }
 
 function normalizeVoiceTranscript(text) {
@@ -287,15 +310,18 @@ function getNumberFromSpeech(text) {
   const normalized = normalizeVoiceTranscript(text);
   const combined = `${lower} ${normalized}`;
 
-  if (combined.includes("one") || combined.includes("ένα") || combined.includes("ena")) return 1;
-  if (combined.includes("two") || combined.includes("δύο") || combined.includes("dio") || combined.includes("δυο") || combined.includes("duo")) return 2;
-  if (combined.includes("three") || combined.includes("τρία") || combined.includes("tria") || combined.includes("τρια")) return 3;
-  if (combined.includes("four") || combined.includes("τέσσερα") || combined.includes("tessera") || combined.includes("τεσσερα")) return 4;
-  if (combined.includes("five") || combined.includes("πέντε") || combined.includes("pente") || combined.includes("πεντε")) return 5;
+  const map = [
+    { value: 1, keys: ["1", "one", "ένα", "ena"] },
+    { value: 2, keys: ["2", "two", "δύο", "dio"] },
+    { value: 3, keys: ["3", "three", "τρία", "tria"] },
+    { value: 4, keys: ["4", "four", "τέσσερα", "tessera"] },
+    { value: 5, keys: ["5", "five", "πέντε", "pente"] },
+  ];
 
-  const directDigitMatch = normalized.match(/\b[1-5]\b/);
-  if (directDigitMatch) {
-    return Number(directDigitMatch[0]);
+  for (const item of map) {
+    if (item.keys.some((k) => combined.includes(k))) {
+      return item.value;
+    }
   }
 
   return null;
@@ -315,15 +341,15 @@ function selectCharacter(character) {
   setBattleBackground("theme-battle");
   applyOutcomeOverlay("");
   speakMessage("Get ready");
-  askNextQuestion();
+  generateQuestion();
 }
 
 function startGame() {
-  alert("Game started");
   setGameState("choose_character");
   selectedCharacter = "";
   enemyCharacter = "";
-  currentQuestionAnswer = null;
+  currentQuestion = null;
+  lastQuestion = "";
   answerLocked = false;
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
@@ -453,30 +479,25 @@ if (!SpeechRecognition) {
         if (answerLocked) {
           return;
         }
-        const spokenAnswer = getNumberFromSpeech(cleanedTranscript);
-        console.log("NUMBER MATCH:", spokenAnswer);
-        if (spokenAnswer === null || currentQuestionAnswer === null) {
+        const spokenNumber = getNumberFromSpeech(cleanedTranscript);
+        console.log("NUMBER MATCH:", spokenNumber);
+        if (spokenNumber === null || !currentQuestion) {
           return;
         }
 
-        const isCorrectAnswer = spokenAnswer === currentQuestionAnswer;
+        console.log("USER ANSWER:", spokenNumber);
+        console.log("CORRECT:", currentQuestion.answer);
         answerLocked = true;
-        resolveBattleRound(isCorrectAnswer);
-        if (isCorrectAnswer) {
-          nextRoundTimeout = setTimeout(() => {
-            if (gameState === "answer") {
-              askNextQuestion();
-            }
-          }, 1500);
+        if (spokenNumber === currentQuestion.answer) {
+          handleCorrectAnswer();
         } else {
-          nextRoundTimeout = setTimeout(() => {
-            if (gameState === "answer") {
-              setBattleBackground(currentBackgroundTheme);
-              applyOutcomeOverlay("");
-              answerLocked = false;
-            }
-          }, 800);
+          handleWrongAnswer();
         }
+        nextRoundTimeout = setTimeout(() => {
+          if (gameState === "answer") {
+            generateQuestion();
+          }
+        }, 1500);
         return;
       }
     } finally {

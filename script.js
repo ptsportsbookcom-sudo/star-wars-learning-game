@@ -113,7 +113,7 @@ const BACKGROUND_IMAGES = [
   "Images/e.png",
   "Images/f.png",
 ];
-bgMusicElement.src = "audio/music.mp3";
+bgMusicElement.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
 bgMusicElement.loop = true;
 bgMusicElement.volume = 0.2;
 

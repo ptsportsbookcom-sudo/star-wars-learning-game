@@ -35,6 +35,7 @@ let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
 let ignoreSpeechUntil = 0;
+let answerAcceptAt = 0;
 let gameMode = "math"; // math | alphabet | object
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
@@ -339,6 +340,7 @@ function getRandomInt(min, max) {
 
 function generateQuestion() {
   gameMode = ["math", "alphabet", "object"][Math.floor(Math.random() * 3)];
+  answerAcceptAt = Date.now() + 2000;
   console.log("MODE:", gameMode);
 
   if (gameMode === "alphabet") {
@@ -481,18 +483,55 @@ function getNumberFromSpeech(text) {
   const digitMatch = normalized.match(/\d+/);
   if (digitMatch) return parseInt(digitMatch[0], 10);
 
-  if (normalized.includes("one") || normalized.includes("ena")) return 1;
-  if (normalized.includes("two") || normalized.includes("dio") || normalized.includes("duo")) return 2;
-  if (normalized.includes("three") || normalized.includes("tria")) return 3;
-  if (normalized.includes("four") || normalized.includes("tessera") || normalized.includes("tesera")) return 4;
-  if (normalized.includes("five") || normalized.includes("pente")) return 5;
-  if (normalized.includes("six") || normalized.includes("exi")) return 6;
+  const tokenMap = {
+    one: 1, two: 2, three: 3, four: 4, five: 5,
+    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
 
-  // IMPORTANT FIXES
-  if (normalized.includes("seven") || normalized.includes("efta") || normalized.includes("epta")) return 7;
-  if (normalized.includes("eight") || normalized.includes("okto") || normalized.includes("oktoh")) return 8;
-  if (normalized.includes("nine") || normalized.includes("ennia") || normalized.includes("ennea") || normalized.includes("enya")) return 9;
-  if (normalized.includes("ten") || normalized.includes("deka")) return 10;
+    ενα: 1, ένα: 1,
+    δυο: 2, δύο: 2,
+    τρια: 3, τρία: 3,
+    τεσσερα: 4, τέσσερα: 4,
+    πεντε: 5, πέντε: 5,
+    εξι: 6, έξι: 6,
+    εφτα: 7, επτα: 7, εφτά: 7, επτά: 7,
+    οκτω: 8, οκτώ: 8,
+    εννια: 9, εννέα: 9,
+    δεκα: 10, δέκα: 10,
+
+    ena: 1,
+    dio: 2, duo: 2,
+    tria: 3,
+    tessera: 4, tesera: 4,
+    pente: 5,
+    exi: 6,
+    efta: 7, epta: 7,
+    okto: 8,
+    ennia: 9, ennea: 9, enya: 9,
+    deka: 10
+  };
+
+  for (const [token, value] of Object.entries(tokenMap)) {
+    if (normalized.includes(token)) {
+      return value;
+    }
+  }
+
+  const fuzzyMap = [
+    { key: ["faiv", "fai", "fiv"], value: 5 },
+    { key: ["tu", "to", "too"], value: 2 },
+    { key: ["tri", "tree"], value: 3 },
+    { key: ["for", "foor"], value: 4 },
+    { key: ["siks", "sex"], value: 6 },
+    { key: ["sef", "sevn"], value: 7 },
+    { key: ["okto", "ok"], value: 8 },
+    { key: ["nai", "naen"], value: 9 }
+  ];
+
+  for (const f of fuzzyMap) {
+    if (f.key.some(k => normalized.includes(k))) {
+      return f.value;
+    }
+  }
 
   return null;
 }
@@ -645,6 +684,10 @@ if (!SpeechRecognition) {
     }
 
     if (gameState === "answer") {
+      if (Date.now() < answerAcceptAt) {
+        return;
+      }
+
       if (answerLocked) {
         return;
       }

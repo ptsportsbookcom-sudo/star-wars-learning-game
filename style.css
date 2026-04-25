@@ -75,7 +75,8 @@ select {
 }
 
 #listeningStatus,
-#transcript {
+#transcript,
+#selectionResult {
   margin: 0.75rem 0 0;
   line-height: 1.4;
 }

@@ -3,9 +3,25 @@ const startListeningButton = document.getElementById("startListeningBtn");
 const transcriptElement = document.getElementById("transcript");
 const statusElement = document.getElementById("listeningStatus");
 const languageSelect = document.getElementById("languageSelect");
+const selectionResultElement = document.getElementById("selectionResult");
+
+let selectedCharacter = "";
+let waitingForCharacter = false;
+
+function speakMessage(message) {
+  if ("speechSynthesis" in window) {
+    const utterance = new SpeechSynthesisUtterance(message);
+    window.speechSynthesis.speak(utterance);
+  }
+  statusElement.textContent = `Status: ${message}`;
+}
 
 function startGame() {
   alert("Game started");
+  waitingForCharacter = true;
+  selectedCharacter = "";
+  selectionResultElement.textContent = "You chose: ...";
+  speakMessage("Choose your character by saying their name");
 }
 
 startGameButton.addEventListener("click", startGame);
@@ -24,9 +40,24 @@ if (!SpeechRecognition) {
   recognition.maxAlternatives = 1;
 
   const allowedCommands = ["start game", "ξεκίνα παιχνίδι"];
+  const characterMap = [
+    { keywords: ["luke"], character: "Luke Skywalker" },
+    { keywords: ["chewbacca"], character: "Chewbacca" },
+    { keywords: ["vader"], character: "Darth Vader" },
+    { keywords: ["emperor"], character: "Emperor" },
+    { keywords: ["r2", "r2d2"], character: "R2-D2" },
+    { keywords: ["maul"], character: "Darth Maul" },
+  ];
 
   function normalizeTranscript(text) {
     return text.toLowerCase().trim().replace(/\s+/g, " ");
+  }
+
+  function findCharacterFromTranscript(normalizedTranscript) {
+    const match = characterMap.find((item) =>
+      item.keywords.some((keyword) => normalizedTranscript.includes(keyword))
+    );
+    return match ? match.character : "";
   }
 
   recognition.onstart = () => {
@@ -52,6 +83,24 @@ if (!SpeechRecognition) {
 
     if (shouldStartGame) {
       startGame();
+      return;
+    }
+
+    const hasFinalResult = Array.from(event.results).some(
+      (result) => result.isFinal
+    );
+
+    if (waitingForCharacter && hasFinalResult && normalizedTranscript) {
+      const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
+
+      if (matchedCharacter) {
+        selectedCharacter = matchedCharacter;
+        waitingForCharacter = false;
+        selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
+        speakMessage(`Great choice! You chose ${selectedCharacter}.`);
+      } else {
+        speakMessage("I didn't understand, try again");
+      }
     }
   };
 

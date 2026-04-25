@@ -772,12 +772,12 @@ if (!SpeechRecognition) {
 
   recognition.onend = () => {
     isRecognitionRunning = false;
-    recognition.lang = "en-US";
-    try {
-      recognition.start();
-    } catch (error) {
-      if (voiceEnablePrompt.classList.contains("hidden")) {
-        setWaitingStatus();
+
+    if (shouldKeepListening && appIsActive) {
+      try {
+        recognition.start();
+      } catch (e) {
+        console.log("Restart blocked");
       }
     }
   };

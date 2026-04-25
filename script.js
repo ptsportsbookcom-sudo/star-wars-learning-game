@@ -113,22 +113,35 @@ const BACKGROUND_IMAGES = [
   "Images/e.png",
   "Images/f.png",
 ];
-bgMusicElement.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-bgMusicElement.loop = true;
-bgMusicElement.volume = 0.2;
+const MUSIC_TRACKS = [
+  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+];
+let currentTrackIndex = 0;
 
 function playBackgroundMusic() {
   if (!musicEnabled) return;
 
+  if (!bgMusicElement.src) {
+    currentTrackIndex = Math.floor(Math.random() * MUSIC_TRACKS.length);
+    bgMusicElement.src = MUSIC_TRACKS[currentTrackIndex];
+  }
+
   if (!bgMusicElement.paused) return;
 
   bgMusicElement.volume = 0.2;
-  bgMusicElement.loop = true;
 
   bgMusicElement.play().catch(err => {
     console.log("Music failed:", err);
   });
 }
+
+bgMusicElement.addEventListener("ended", () => {
+  currentTrackIndex = (currentTrackIndex + 1) % MUSIC_TRACKS.length;
+  bgMusicElement.src = MUSIC_TRACKS[currentTrackIndex];
+  bgMusicElement.play();
+});
 
 musicToggleButton.addEventListener("click", () => {
   musicEnabled = !musicEnabled;

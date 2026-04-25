@@ -9,33 +9,6 @@ const characterGridElement = document.getElementById("characterGrid");
 const bgMusicElement = document.getElementById("bgMusic");
 const musicToggleButton = document.getElementById("musicToggleBtn");
 
-const characters = [
-  {
-    name: "Luke Skywalker",
-    image: "https://via.placeholder.com/150?text=Luke",
-  },
-  {
-    name: "Chewbacca",
-    image: "https://via.placeholder.com/150?text=Chewbacca",
-  },
-  {
-    name: "Darth Vader",
-    image: "https://via.placeholder.com/150?text=Vader",
-  },
-  {
-    name: "Emperor",
-    image: "https://via.placeholder.com/150?text=Emperor",
-  },
-  {
-    name: "R2-D2",
-    image: "https://via.placeholder.com/150?text=R2D2",
-  },
-  {
-    name: "Darth Maul",
-    image: "https://via.placeholder.com/150?text=Maul",
-  },
-];
-
 let selectedCharacter = "";
 let gameState = "idle";
 let characterSelected = false;
@@ -65,24 +38,6 @@ musicToggleButton.addEventListener("click", () => {
   }
 });
 
-function renderCharacterCards() {
-  characterGridElement.innerHTML = characters
-    .map(
-      (character) => `
-        <article class="character-card" data-character="${character.name}">
-          <img
-            src="${character.image}"
-            alt="${character.name}"
-            loading="lazy"
-            onerror="this.onerror=null;this.src='https://via.placeholder.com/150?text=Character';"
-          />
-          <p>${character.name}</p>
-        </article>
-      `
-    )
-    .join("");
-}
-
 function updateSelectedCharacterCard(characterName) {
   const cards = characterGridElement.querySelectorAll(".character-card");
   cards.forEach((card) => {
@@ -110,7 +65,6 @@ function startGame() {
 }
 
 startGameButton.addEventListener("click", startGame);
-renderCharacterCards();
 
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;

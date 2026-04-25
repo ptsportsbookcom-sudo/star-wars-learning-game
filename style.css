@@ -5,12 +5,14 @@
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #0d1117;
-  background-image: radial-gradient(circle at 15% 20%, #ffffff33 1px, transparent 1px),
-    radial-gradient(circle at 80% 10%, #ffffff22 1px, transparent 1px),
-    radial-gradient(circle at 35% 70%, #ffffff22 1px, transparent 1px),
-    radial-gradient(circle at 65% 50%, #ffffff2f 1px, transparent 1px);
-  background-size: 220px 220px, 260px 260px, 200px 200px, 180px 180px;
+  background-color: #000;
+  background-image: radial-gradient(circle at top, #1a1f3a 0%, #06080f 46%, #000 100%),
+    radial-gradient(circle at 15% 20%, #ffffff40 1px, transparent 1px),
+    radial-gradient(circle at 80% 10%, #ffffff30 1px, transparent 1px),
+    radial-gradient(circle at 35% 70%, #ffffff30 1px, transparent 1px),
+    radial-gradient(circle at 65% 50%, #ffffff3f 1px, transparent 1px),
+    radial-gradient(circle at 22% 82%, #ffffff2e 1px, transparent 1px);
+  background-size: cover, 220px 220px, 260px 260px, 200px 200px, 180px 180px, 240px 240px;
   color: #f5f5f5;
   min-height: 100vh;
   display: grid;
@@ -19,34 +21,35 @@ body {
 }
 
 body.theme-space {
-  background-color: #0d1117;
-  box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.04);
+  background-color: #000;
+  box-shadow: inset 0 0 120px rgba(130, 160, 255, 0.14);
 }
 
 body.theme-desert {
-  background-color: #5b3f24;
-  background-image: radial-gradient(circle at 15% 20%, #ffe9b03a 1px, transparent 1px),
-    radial-gradient(circle at 70% 12%, #fff2cc2f 1px, transparent 1px),
-    linear-gradient(180deg, #8f6138 0%, #5b3f24 100%);
+  background-color: #05060d;
+  background-image: radial-gradient(circle at top, #223154 0%, #070910 45%, #000 100%),
+    radial-gradient(circle at 10% 15%, #ffffff30 1px, transparent 1px),
+    radial-gradient(circle at 72% 22%, #ffffff26 1px, transparent 1px),
+    radial-gradient(circle at 38% 68%, #ffffff20 1px, transparent 1px);
 }
 
 body.theme-electric {
-  background-color: #111939;
+  background-color: #090f2c;
   background-image: radial-gradient(circle at 20% 20%, #52d2ff33 1px, transparent 1px),
     radial-gradient(circle at 75% 40%, #6a8dff44 1px, transparent 1px),
-    linear-gradient(145deg, #111939 0%, #1d2f63 100%);
+    linear-gradient(145deg, #090f2c 0%, #101b44 58%, #070a19 100%);
 }
 
 body.theme-night {
-  background-color: #101018;
+  background-color: #05060a;
   background-image: radial-gradient(circle at 18% 28%, #ffffff2f 1px, transparent 1px),
     radial-gradient(circle at 78% 18%, #ffffff1f 1px, transparent 1px),
-    linear-gradient(180deg, #101018 0%, #14142a 100%);
+    linear-gradient(180deg, #070910 0%, #0f1428 100%);
 }
 
 body.theme-battle {
-  background-color: #1b1f31;
-  box-shadow: inset 0 0 120px rgba(60, 80, 140, 0.35);
+  background-color: #070a14;
+  box-shadow: inset 0 0 140px rgba(80, 120, 220, 0.35);
 }
 
 .container {
@@ -191,11 +194,12 @@ body.state-lose {
 
 .battle-area {
   margin-top: 1.25rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.75rem;
   padding: 1rem;
   text-align: left;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.32);
 }
 
 .battle-area h2 {
@@ -226,6 +230,24 @@ body.state-lose {
   background: radial-gradient(circle at center, rgba(255, 255, 255, 0.45), transparent 70%);
   animation: impactFlash 0.22s ease-out;
   pointer-events: none;
+}
+
+body.flash-win::after,
+body.flash-lose::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 900;
+  animation: screenFlash 0.35s ease-out;
+}
+
+body.flash-win::after {
+  background: rgba(80, 240, 120, 0.18);
+}
+
+body.flash-lose::after {
+  background: rgba(255, 65, 65, 0.2);
 }
 
 .battle-label {
@@ -266,6 +288,14 @@ body.state-lose {
   opacity: 0.75;
 }
 
+#enemyImage.hit {
+  opacity: 0.45;
+}
+
+#playerImage.hit {
+  filter: drop-shadow(0 0 10px rgba(255, 70, 70, 0.65));
+}
+
 #playerName,
 #enemyName,
 #questionDisplay,
@@ -275,14 +305,38 @@ body.state-lose {
 }
 
 #questionDisplay {
-  font-size: 2rem;
+  font-size: clamp(3rem, 8vw, 4rem);
   text-align: center;
   letter-spacing: 0.03em;
   padding: 0.4rem 0;
 }
 
+#questionHint {
+  margin: 0.25rem 0 0;
+  text-align: center;
+  opacity: 0.8;
+  font-size: 0.95rem;
+}
+
 #battleResult {
   margin-top: 0.85rem;
+}
+
+#impactText {
+  margin: 0.55rem 0 0;
+  min-height: 1.5rem;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+#impactText.show-hit {
+  color: #7eff85;
+}
+
+#impactText.show-miss {
+  color: #ff7777;
 }
 
 .question-area {
@@ -306,6 +360,15 @@ body.state-lose {
 }
 
 @keyframes impactFlash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes screenFlash {
   from {
     opacity: 1;
   }

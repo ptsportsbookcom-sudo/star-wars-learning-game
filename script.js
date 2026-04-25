@@ -18,6 +18,7 @@ const playerImageElement = document.getElementById("playerImage");
 const enemyImageElement = document.getElementById("enemyImage");
 const questionDisplayElement = document.getElementById("questionDisplay");
 const battleResultElement = document.getElementById("battleResult");
+const impactTextElement = document.getElementById("impactText");
 
 let selectedCharacter = "";
 let enemyCharacter = "";
@@ -41,8 +42,6 @@ const CHARACTER_IMAGES = {
   "Darth Vader": "Images/Darth.png",
   Emperor: "Images/Emperor.png",
 };
-const QUESTION_ICONS = ["🍎", "⭐", "🚀", "🪐", "⚡"];
-
 bgMusicElement.volume = 0.2;
 
 function playBackgroundMusic() {
@@ -113,6 +112,15 @@ function applyOutcomeOverlay(outcomeClass) {
   }
 }
 
+function flashScreen(flashClass) {
+  document.body.classList.remove("flash-win", "flash-lose");
+  void document.body.offsetWidth;
+  document.body.classList.add(flashClass);
+  setTimeout(() => {
+    document.body.classList.remove(flashClass);
+  }, 360);
+}
+
 function setQuestionBackground() {
   const themes = ["theme-desert", "theme-space", "theme-electric", "theme-night"];
   const randomTheme = themes[getRandomInt(0, themes.length - 1)];
@@ -147,10 +155,16 @@ function runMiniFightAnimation(playerWon) {
   if (playerWon) {
     playerImageElement.classList.add("attack");
     enemyImageElement.classList.add("hit");
+    impactTextElement.textContent = "HIT!";
+    impactTextElement.classList.remove("show-miss");
+    impactTextElement.classList.add("show-hit");
   } else {
     enemyImageElement.classList.add("attack");
     playerImageElement.classList.add("hit");
     hitCardElement = playerCardElement;
+    impactTextElement.textContent = "MISS!";
+    impactTextElement.classList.remove("show-hit");
+    impactTextElement.classList.add("show-miss");
   }
 
   hitCardElement.classList.remove("impact-flash");
@@ -162,6 +176,8 @@ function runMiniFightAnimation(playerWon) {
 
   setTimeout(() => {
     resetFighterAnimationState();
+    impactTextElement.textContent = "";
+    impactTextElement.classList.remove("show-hit", "show-miss");
   }, 800);
 }
 
@@ -174,11 +190,13 @@ function resolveBattleRound(isCorrectAnswer) {
     battleResultElement.textContent = "You Win!";
     speakMessage("Correct!");
     applyOutcomeOverlay("state-win");
+    flashScreen("flash-win");
     runMiniFightAnimation(true);
   } else {
     battleResultElement.textContent = "You Lose!";
     speakMessage("You Lose!");
     applyOutcomeOverlay("state-lose");
+    flashScreen("flash-lose");
     runMiniFightAnimation(false);
   }
 }
@@ -216,9 +234,8 @@ function getRandomInt(min, max) {
 function askNextQuestion() {
   const left = getRandomInt(1, 5);
   const right = getRandomInt(1, 5);
-  const icon = QUESTION_ICONS[getRandomInt(0, QUESTION_ICONS.length - 1)];
   currentQuestionAnswer = left + right;
-  questionDisplayElement.textContent = `${icon} + ${icon} = ?`;
+  questionDisplayElement.textContent = `${left} + ${right} = ?`;
   battleResultElement.textContent = "Battle result: Ready to fight";
   setQuestionBackground();
   setGameState("waiting_for_answer");

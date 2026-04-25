@@ -474,15 +474,13 @@ if (!SpeechRecognition) {
       return;
     }
 
-    let finalTranscript = "";
+    let transcript = "";
 
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript;
-      }
+      transcript += event.results[i][0].transcript;
     }
 
-    const cleanedTranscript = finalTranscript.trim();
+    const cleanedTranscript = transcript.trim();
     console.log("HEARD:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."

@@ -30,15 +30,13 @@ let musicEnabled = true;
 let currentQuestionAnswer = null;
 let nextRoundTimeout = null;
 
-const HEROES = ["Luke Skywalker", "Chewbacca", "R2-D2"];
-const VILLAINS = ["Darth Vader", "Emperor", "Darth Maul"];
+const HEROES = ["Luke Skywalker", "R2-D2"];
+const VILLAINS = ["Darth Vader", "Emperor"];
 const CHARACTER_IMAGES = {
-  "Luke Skywalker": "/images/luke-skywalker.svg",
-  Chewbacca: "/images/chewbacca.svg",
-  "R2-D2": "/images/r2-d2.svg",
-  "Darth Vader": "/images/darth-vader.svg",
-  Emperor: "/images/emperor.svg",
-  "Darth Maul": "/images/darth-maul.svg",
+  "Luke Skywalker": "images/luke.png",
+  "R2-D2": "images/r2d2.png",
+  "Darth Vader": "images/vader.png",
+  Emperor: "images/emperor.png",
 };
 const QUESTION_ICONS = ["🍎", "⭐", "🚀", "🪐", "⚡"];
 
@@ -149,7 +147,7 @@ function setGameState(nextState) {
 }
 
 function setCharacterImage(imgElement, characterName) {
-  imgElement.src = CHARACTER_IMAGES[characterName] || "/images/unknown.svg";
+  imgElement.src = CHARACTER_IMAGES[characterName] || "images/luke.png";
   imgElement.alt = characterName;
 }
 
@@ -263,11 +261,9 @@ if (!SpeechRecognition) {
   const allowedCommands = ["start game", "ξεκίνα παιχνίδι"];
   const characterMap = [
     { keywords: ["luke"], character: "Luke Skywalker" },
-    { keywords: ["chewbacca", "chewy"], character: "Chewbacca" },
     { keywords: ["vader"], character: "Darth Vader" },
-    { keywords: ["emperor", "palpatine"], character: "Emperor" },
+    { keywords: ["emperor"], character: "Emperor" },
     { keywords: ["r2", "r2d2"], character: "R2-D2" },
-    { keywords: ["maul"], character: "Darth Maul" },
   ];
 
   function normalizeTranscript(text) {

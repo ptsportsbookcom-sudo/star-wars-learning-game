@@ -452,6 +452,7 @@ if (!SpeechRecognition) {
 
     console.log("STATE:", gameState);
     isProcessing = true;
+    let answerProcessed = false;
 
     try {
       if (gameState === "idle") {
@@ -493,6 +494,16 @@ if (!SpeechRecognition) {
         } else {
           handleWrongAnswer();
         }
+        answerProcessed = true;
+        console.log("ANSWER PROCESSED");
+        console.log("STATE:", gameState);
+        console.log("isProcessing:", isProcessing);
+
+        setTimeout(() => {
+          isProcessing = false;
+          console.log("isProcessing:", isProcessing);
+        }, 300);
+
         nextRoundTimeout = setTimeout(() => {
           if (gameState === "answer") {
             generateQuestion();
@@ -501,7 +512,9 @@ if (!SpeechRecognition) {
         return;
       }
     } finally {
-      isProcessing = false;
+      if (!answerProcessed) {
+        isProcessing = false;
+      }
     }
   };
 
@@ -522,24 +535,10 @@ if (!SpeechRecognition) {
 
   recognition.onend = () => {
     isRecognitionRunning = false;
-    restartPending = false;
-
-    if (shouldKeepListening && appIsActive && !isProcessing) {
-      recognition.lang = languageSelect.value;
-      restartPending = true;
-      setTimeout(() => {
-        if (
-          restartPending &&
-          !isRecognitionRunning &&
-          shouldKeepListening &&
-          appIsActive &&
-          !isProcessing
-        ) {
-          recognition.start();
-        }
-        restartPending = false;
-      }, 250);
-    } else {
+    recognition.lang = languageSelect.value;
+    try {
+      recognition.start();
+    } catch (error) {
       if (voiceEnablePrompt.classList.contains("hidden")) {
         setWaitingStatus();
       }

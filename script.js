@@ -7,7 +7,7 @@ const selectionResultElement = document.getElementById("selectionResult");
 const voiceEnablePrompt = document.getElementById("voiceEnablePrompt");
 
 let selectedCharacter = "";
-let waitingForCharacter = false;
+let gameState = "idle";
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
@@ -22,7 +22,7 @@ function speakMessage(message) {
 
 function startGame() {
   alert("Game started");
-  waitingForCharacter = true;
+  gameState = "waiting_for_character";
   selectedCharacter = "";
   selectionResultElement.textContent = "You chose: ...";
   speakMessage("Choose your character by saying their name");
@@ -45,15 +45,19 @@ if (!SpeechRecognition) {
   const allowedCommands = ["start game", "ξεκίνα παιχνίδι"];
   const characterMap = [
     { keywords: ["luke"], character: "Luke Skywalker" },
-    { keywords: ["chewbacca"], character: "Chewbacca" },
+    { keywords: ["chewbacca", "chewy"], character: "Chewbacca" },
     { keywords: ["vader"], character: "Darth Vader" },
-    { keywords: ["emperor"], character: "Emperor" },
+    { keywords: ["emperor", "palpatine"], character: "Emperor" },
     { keywords: ["r2", "r2d2"], character: "R2-D2" },
     { keywords: ["maul"], character: "Darth Maul" },
   ];
 
   function normalizeTranscript(text) {
-    return text.toLowerCase().trim().replace(/\s+/g, " ");
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s\u0370-\u03ff]/g, " ")
+      .trim()
+      .replace(/\s+/g, " ");
   }
 
   function findCharacterFromTranscript(normalizedTranscript) {
@@ -101,35 +105,40 @@ if (!SpeechRecognition) {
     }
 
     const cleanedTranscript = combinedTranscript.trim();
+    console.log("Transcript:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
     }`;
 
     const normalizedTranscript = normalizeTranscript(cleanedTranscript);
+    const hasFinalResult = Array.from(event.results).some(
+      (result) => result.isFinal
+    );
+
+    if (!hasFinalResult || !normalizedTranscript) {
+      return;
+    }
+
+    if (gameState === "waiting_for_character") {
+      const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
+
+      if (matchedCharacter) {
+        selectedCharacter = matchedCharacter;
+        gameState = "in_game";
+        selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
+        speakMessage(`Great choice! You chose ${selectedCharacter}.`);
+      } else {
+        speakMessage("I didn't understand, try again");
+      }
+      return;
+    }
+
     const shouldStartGame = allowedCommands.some((command) =>
       normalizedTranscript.includes(command)
     );
 
     if (shouldStartGame) {
       startGame();
-      return;
-    }
-
-    const hasFinalResult = Array.from(event.results).some(
-      (result) => result.isFinal
-    );
-
-    if (waitingForCharacter && hasFinalResult && normalizedTranscript) {
-      const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
-
-      if (matchedCharacter) {
-        selectedCharacter = matchedCharacter;
-        waitingForCharacter = false;
-        selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
-        speakMessage(`Great choice! You chose ${selectedCharacter}.`);
-      } else {
-        speakMessage("I didn't understand, try again");
-      }
     }
   };
 

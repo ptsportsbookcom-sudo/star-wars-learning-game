@@ -4,6 +4,8 @@ const transcriptElement = document.getElementById("transcript");
 const statusElement = document.getElementById("listeningStatus");
 const languageSelect = document.getElementById("languageSelect");
 const selectionResultElement = document.getElementById("selectionResult");
+const selectionScreenElement = document.getElementById("selectionScreen");
+const gameScreenElement = document.getElementById("gameScreen");
 const voiceEnablePrompt = document.getElementById("voiceEnablePrompt");
 const characterGridElement = document.getElementById("characterGrid");
 const bgMusicElement = document.getElementById("bgMusic");
@@ -29,6 +31,7 @@ let restartPending = false;
 let musicEnabled = true;
 let currentQuestionAnswer = null;
 let nextRoundTimeout = null;
+let currentBackgroundTheme = "theme-space";
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -89,17 +92,35 @@ function getRandomEnemyCharacter(playerCharacter) {
 
 function setBattleBackground(mode) {
   document.body.classList.remove(
-    "idle-mode",
-    "battle-mode",
-    "victory-mode",
-    "defeat-mode"
+    "theme-space",
+    "theme-desert",
+    "theme-electric",
+    "theme-night",
+    "theme-battle",
+    "state-win",
+    "state-lose"
   );
   if (mode) {
+    currentBackgroundTheme = mode;
     document.body.classList.add(mode);
   }
 }
 
-setBattleBackground("idle-mode");
+function applyOutcomeOverlay(outcomeClass) {
+  document.body.classList.remove("state-win", "state-lose");
+  if (outcomeClass) {
+    document.body.classList.add(outcomeClass);
+  }
+}
+
+function setQuestionBackground() {
+  const themes = ["theme-desert", "theme-space", "theme-electric", "theme-night"];
+  const randomTheme = themes[getRandomInt(0, themes.length - 1)];
+  setBattleBackground(randomTheme);
+  applyOutcomeOverlay("");
+}
+
+setBattleBackground("theme-space");
 
 function triggerEffect(element, className, durationMs = 450) {
   element.classList.remove(className);
@@ -118,14 +139,14 @@ function resolveBattleRound(isCorrectAnswer) {
   if (isCorrectAnswer) {
     battleResultElement.textContent = "You Win!";
     speakMessage("Correct!");
-    setBattleBackground("victory-mode");
+    applyOutcomeOverlay("state-win");
     triggerEffect(playerCardElement, "attack");
     triggerEffect(enemyCardElement, "shake");
     triggerEffect(enemyCardElement, "fade", 650);
   } else {
-    battleResultElement.textContent = "You Lose!";
-    speakMessage("Wrong!");
-    setBattleBackground("defeat-mode");
+    battleResultElement.textContent = "Try again";
+    speakMessage("Try again");
+    applyOutcomeOverlay("state-lose");
     triggerEffect(enemyCardElement, "attack");
     triggerEffect(playerCardElement, "shake");
   }
@@ -134,6 +155,9 @@ function resolveBattleRound(isCorrectAnswer) {
 function speakMessage(message) {
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(message);
+    const isVillain = VILLAINS.includes(selectedCharacter);
+    utterance.rate = isVillain ? 0.82 : 0.85;
+    utterance.pitch = isVillain ? 0.7 : 0.8;
     window.speechSynthesis.speak(utterance);
   }
   statusElement.textContent = message;
@@ -164,9 +188,9 @@ function askNextQuestion() {
   currentQuestionAnswer = left + right;
   questionDisplayElement.textContent = `${icon} + ${icon} = ?`;
   battleResultElement.textContent = "Battle result: Ready to fight";
-  setBattleBackground("battle-mode");
+  setQuestionBackground();
   setGameState("waiting_for_answer");
-  speakMessage(`How much is ${left} plus ${right}?`);
+  speakMessage(`What is ${left} plus ${right}?`);
 }
 
 function parseAnswerFromTranscript(normalizedTranscript) {
@@ -235,7 +259,10 @@ function startGame() {
   setCharacterImage(playerImageElement, "Luke Skywalker");
   setCharacterImage(enemyImageElement, "Darth Vader");
   updateSelectedCharacterCard("");
-  setBattleBackground("idle-mode");
+  setBattleBackground("theme-space");
+  applyOutcomeOverlay("");
+  selectionScreenElement.classList.remove("hidden");
+  gameScreenElement.classList.add("hidden");
   speakMessage("Choose your character by saying their name");
 }
 
@@ -366,7 +393,10 @@ if (!SpeechRecognition) {
           setCharacterImage(playerImageElement, selectedCharacter);
           setCharacterImage(enemyImageElement, enemyCharacter);
           updateSelectedCharacterCard(selectedCharacter);
-          setBattleBackground("battle-mode");
+          selectionScreenElement.classList.add("hidden");
+          gameScreenElement.classList.remove("hidden");
+          setBattleBackground("theme-battle");
+          applyOutcomeOverlay("");
           speakMessage("Get ready");
           askNextQuestion();
         } else {
@@ -384,11 +414,21 @@ if (!SpeechRecognition) {
         const isCorrectAnswer = spokenAnswer === currentQuestionAnswer;
         setGameState("result");
         resolveBattleRound(isCorrectAnswer);
-        nextRoundTimeout = setTimeout(() => {
-          if (gameState === "result") {
-            askNextQuestion();
-          }
-        }, 1200);
+        if (isCorrectAnswer) {
+          nextRoundTimeout = setTimeout(() => {
+            if (gameState === "result") {
+              askNextQuestion();
+            }
+          }, 1500);
+        } else {
+          nextRoundTimeout = setTimeout(() => {
+            if (gameState === "result") {
+              setGameState("waiting_for_answer");
+              setBattleBackground(currentBackgroundTheme);
+              applyOutcomeOverlay("");
+            }
+          }, 800);
+        }
         return;
       }
 

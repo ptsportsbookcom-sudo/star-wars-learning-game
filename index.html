@@ -11,47 +11,51 @@
       Tap anywhere once to enable voice
     </div>
     <main class="container">
-      <h1>Star Wars Learning Game</h1>
-      <div class="controls">
-        <button id="startGameBtn" type="button">Start Game</button>
-        <button id="startListeningBtn" type="button">Start Listening</button>
-        <button id="musicToggleBtn" type="button">Music On / Off</button>
-      </div>
-      <div class="voice-panel">
-        <label for="languageSelect">Recognition Language</label>
-        <select id="languageSelect">
-          <option value="en-US">English</option>
-          <option value="el-GR">Greek</option>
-        </select>
-        <p class="hint">
-          Try saying: "start game" or "ξεκίνα παιχνίδι"
-        </p>
-        <p id="listeningStatus">Status: Idle</p>
-        <p id="transcript">You said: ...</p>
-        <p id="selectionResult">You chose: ...</p>
-      </div>
-      <section class="characters-panel" aria-label="Character selection">
-        <h2>Choose Your Character</h2>
-        <div id="characterGrid" class="character-grid">
-          <div class="character-card" data-character="Luke Skywalker">
-            <img src="Images/Luke.png" alt="Luke Skywalker" />
-            <p>Luke Skywalker</p>
-          </div>
-          <div class="character-card" data-character="Darth Vader">
-            <img src="Images/Darth.png" alt="Darth Vader" />
-            <p>Darth Vader</p>
-          </div>
-          <div class="character-card" data-character="Emperor">
-            <img src="Images/Emperor.png" alt="Emperor" />
-            <p>Emperor</p>
-          </div>
-          <div class="character-card" data-character="R2-D2">
-            <img src="Images/r2d2.png" alt="R2-D2" />
-            <p>R2-D2</p>
-          </div>
+      <section id="selectionScreen">
+        <h1>Star Wars Learning Game</h1>
+        <div class="controls">
+          <button id="startGameBtn" type="button">Start Game</button>
+          <button id="startListeningBtn" type="button">Start Listening</button>
+          <button id="musicToggleBtn" type="button">Music On / Off</button>
         </div>
+        <div class="voice-panel">
+          <label for="languageSelect">Recognition Language</label>
+          <select id="languageSelect">
+            <option value="en-US">English</option>
+            <option value="el-GR">Greek</option>
+          </select>
+          <p class="hint">
+            Try saying: "start game" or "ξεκίνα παιχνίδι"
+          </p>
+          <p id="listeningStatus">Status: Idle</p>
+          <p id="transcript">You said: ...</p>
+          <p id="selectionResult">You chose: ...</p>
+        </div>
+        <section class="characters-panel" aria-label="Character selection">
+          <h2>Choose Your Character</h2>
+          <div id="characterGrid" class="character-grid">
+            <div class="character-card" data-character="Luke Skywalker">
+              <img src="Images/Luke.png" alt="Luke Skywalker" />
+              <p>Luke Skywalker</p>
+            </div>
+            <div class="character-card" data-character="Darth Vader">
+              <img src="Images/Darth.png" alt="Darth Vader" />
+              <p>Darth Vader</p>
+            </div>
+            <div class="character-card" data-character="Emperor">
+              <img src="Images/Emperor.png" alt="Emperor" />
+              <p>Emperor</p>
+            </div>
+            <div class="character-card" data-character="R2-D2">
+              <img src="Images/r2d2.png" alt="R2-D2" />
+              <p>R2-D2</p>
+            </div>
+          </div>
+        </section>
       </section>
-      <section class="battle-area" aria-label="Battle area">
+
+      <section id="gameScreen" class="hidden">
+        <section class="battle-area" aria-label="Battle area">
         <h2>Battle Arena</h2>
         <div class="battle-characters">
           <div id="playerCard" class="battle-card">
@@ -70,6 +74,7 @@
           <p id="questionDisplay">Question: Waiting...</p>
         </div>
         <p id="battleResult">Battle result: Ready to fight</p>
+        </section>
       </section>
     </main>
     <audio id="bgMusic" loop preload="none">

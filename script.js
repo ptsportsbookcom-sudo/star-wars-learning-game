@@ -62,18 +62,26 @@ const MUSIC_TRACKS = [
   "audio/music2.mp3",
   "audio/music3.mp3",
 ];
+let currentTrack = "";
 bgMusicElement.volume = 0.2;
 
 function playBackgroundMusic() {
   if (!musicEnabled) return;
 
-  const randomTrack = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+  // if already playing, do nothing
+  if (!bgMusicElement.paused) return;
 
-  if (!bgMusicElement.src.includes(randomTrack)) {
-    bgMusicElement.src = randomTrack;
-  }
+  // pick random track
+  const nextTrack = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
 
-  bgMusicElement.play().catch(() => {});
+  currentTrack = nextTrack;
+  bgMusicElement.src = nextTrack;
+  bgMusicElement.volume = 0.2;
+  bgMusicElement.loop = true;
+
+  bgMusicElement.play().catch(() => {
+    console.log("Autoplay blocked");
+  });
 }
 
 musicToggleButton.addEventListener("click", () => {

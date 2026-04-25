@@ -330,6 +330,8 @@ function setCharacterImage(imgElement, characterName, state = "idle") {
   const imagePath = CHARACTER_IMAGES[characterName]?.[state];
   if (!imagePath) return;
 
+  imgElement.classList.remove("attack", "lose", "idle");
+  imgElement.classList.add(state);
   imgElement.src = imagePath;
   imgElement.alt = characterName;
 }
@@ -345,8 +347,6 @@ function generateQuestion() {
 
   if (gameMode === "alphabet") {
     const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-    const randomImage =
-      ALPHABET_IMAGES[Math.floor(Math.random() * ALPHABET_IMAGES.length)];
 
     currentQuestion = {
       type: "alphabet",
@@ -354,15 +354,13 @@ function generateQuestion() {
     };
 
     answerLocked = false;
-    questionDisplayElement.textContent = "Say this letter";
+    questionDisplayElement.textContent = `Say this letter: ${letter.en} (${letter.el})`;
     battleResultElement.textContent = "Battle result: Ready to fight";
     setRandomBackground();
     setQuestionBackground();
 
     if (questionImageElement) {
-      questionImageElement.src = randomImage;
-      questionImageElement.alt = `Letter ${letter.en}`;
-      questionImageElement.classList.remove("hidden");
+      questionImageElement.classList.add("hidden");
     }
 
     speakMessage("Say the letter");

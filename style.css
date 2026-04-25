@@ -296,11 +296,19 @@ body.flash-lose::after {
 }
 
 #playerImage.attack {
-  transform: scale(1.1) translateX(10px);
+  transform: scale(1.15) translateX(15px);
+  transition: transform 0.2s ease;
 }
 
 #enemyImage.attack {
-  transform: scale(1.1) translateX(-10px);
+  transform: scale(1.15) translateX(-15px);
+  transition: transform 0.2s ease;
+}
+
+#playerImage.lose,
+#enemyImage.lose {
+  opacity: 0.6;
+  filter: grayscale(80%);
 }
 
 #playerImage.hit,

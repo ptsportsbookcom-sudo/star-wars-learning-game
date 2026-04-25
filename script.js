@@ -244,41 +244,6 @@ function askNextQuestion() {
   speakMessage(`What is ${left} plus ${right}?`);
 }
 
-function normalizeGreekNumbers(token) {
-  const numberMap = {
-    one: 1,
-    two: 2,
-    three: 3,
-    "1": 1,
-    "2": 2,
-    "3": 3,
-    ενα: 1,
-    εναν: 1,
-    ενας: 1,
-    εναςς: 1,
-    εναςσ: 1,
-    δυο: 2,
-    διο: 2,
-    dio: 2,
-    duo: 2,
-    dyo: 2,
-    τρια: 3,
-    tria: 3,
-  };
-  return numberMap[token] ?? null;
-}
-
-function parseAnswerFromTranscript(normalizedTranscript) {
-  const words = normalizedTranscript.split(" ");
-  for (const word of words) {
-    const match = normalizeGreekNumbers(word);
-    if (match !== null) {
-      return match;
-    }
-  }
-  return null;
-}
-
 function normalizeVoiceTranscript(text) {
   return text
     .toLowerCase()
@@ -287,6 +252,70 @@ function normalizeVoiceTranscript(text) {
     .replace(/[^\w\s\u0370-\u03ff]/g, " ")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+function getCharacterFromSpeech(text) {
+  const lower = text.toLowerCase();
+  const normalized = normalizeVoiceTranscript(text);
+  const combined = `${lower} ${normalized}`;
+
+  if (combined.includes("luke") || combined.includes("skywalker")) {
+    return "Luke Skywalker";
+  }
+
+  if (combined.includes("vader") || combined.includes("darth")) {
+    return "Darth Vader";
+  }
+
+  if (combined.includes("emperor") || combined.includes("palpatine")) {
+    return "Emperor";
+  }
+
+  if (
+    combined.includes("r2") ||
+    combined.includes("d2") ||
+    combined.includes("r2d2")
+  ) {
+    return "R2-D2";
+  }
+
+  return null;
+}
+
+function getNumberFromSpeech(text) {
+  const lower = text.toLowerCase();
+  const normalized = normalizeVoiceTranscript(text);
+  const combined = `${lower} ${normalized}`;
+
+  if (combined.includes("one") || combined.includes("ένα") || combined.includes("ena")) return 1;
+  if (combined.includes("two") || combined.includes("δύο") || combined.includes("dio") || combined.includes("δυο") || combined.includes("duo")) return 2;
+  if (combined.includes("three") || combined.includes("τρία") || combined.includes("tria") || combined.includes("τρια")) return 3;
+  if (combined.includes("four") || combined.includes("τέσσερα") || combined.includes("tessera") || combined.includes("τεσσερα")) return 4;
+  if (combined.includes("five") || combined.includes("πέντε") || combined.includes("pente") || combined.includes("πεντε")) return 5;
+
+  const directDigitMatch = normalized.match(/\b[1-5]\b/);
+  if (directDigitMatch) {
+    return Number(directDigitMatch[0]);
+  }
+
+  return null;
+}
+
+function selectCharacter(character) {
+  selectedCharacter = character;
+  enemyCharacter = getRandomEnemyCharacter(selectedCharacter);
+  selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
+  playerNameElement.textContent = selectedCharacter;
+  enemyNameElement.textContent = enemyCharacter;
+  setCharacterImage(playerImageElement, selectedCharacter);
+  setCharacterImage(enemyImageElement, enemyCharacter);
+  updateSelectedCharacterCard(selectedCharacter);
+  selectionScreenElement.classList.add("hidden");
+  gameScreenElement.classList.remove("hidden");
+  setBattleBackground("theme-battle");
+  applyOutcomeOverlay("");
+  speakMessage("Get ready");
+  askNextQuestion();
 }
 
 function startGame() {
@@ -337,20 +366,6 @@ if (!SpeechRecognition) {
   recognition.maxAlternatives = 1;
 
   const allowedCommands = ["start", "ξεκινα"];
-  const characterMap = [
-    { keywords: ["luke"], character: "Luke Skywalker" },
-    { keywords: ["vader"], character: "Darth Vader" },
-    { keywords: ["emperor"], character: "Emperor" },
-    { keywords: ["r2", "r2d2"], character: "R2-D2" },
-  ];
-
-  function findCharacterFromTranscript(normalizedTranscript) {
-    const match = characterMap.find((item) =>
-      item.keywords.some((keyword) => normalizedTranscript.includes(keyword))
-    );
-    return match ? match.character : "";
-  }
-
   function setWaitingStatus() {
     statusElement.textContent = "Waiting for command...";
   }
@@ -425,24 +440,11 @@ if (!SpeechRecognition) {
       }
 
       if (gameState === "choose_character") {
-        const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
-        console.log("MATCH:", matchedCharacter || "none");
+        const character = getCharacterFromSpeech(cleanedTranscript);
+        console.log("CHARACTER MATCH:", character);
 
-        if (matchedCharacter) {
-          selectedCharacter = matchedCharacter;
-          enemyCharacter = getRandomEnemyCharacter(selectedCharacter);
-          selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
-          playerNameElement.textContent = selectedCharacter;
-          enemyNameElement.textContent = enemyCharacter;
-          setCharacterImage(playerImageElement, selectedCharacter);
-          setCharacterImage(enemyImageElement, enemyCharacter);
-          updateSelectedCharacterCard(selectedCharacter);
-          selectionScreenElement.classList.add("hidden");
-          gameScreenElement.classList.remove("hidden");
-          setBattleBackground("theme-battle");
-          applyOutcomeOverlay("");
-          speakMessage("Get ready");
-          askNextQuestion();
+        if (character) {
+          selectCharacter(character);
         }
         return;
       }
@@ -451,8 +453,8 @@ if (!SpeechRecognition) {
         if (answerLocked) {
           return;
         }
-        const spokenAnswer = parseAnswerFromTranscript(normalizedTranscript);
-        console.log("MATCH:", spokenAnswer ?? "none");
+        const spokenAnswer = getNumberFromSpeech(cleanedTranscript);
+        console.log("NUMBER MATCH:", spokenAnswer);
         if (spokenAnswer === null || currentQuestionAnswer === null) {
           return;
         }

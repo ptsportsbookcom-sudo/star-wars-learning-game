@@ -494,62 +494,30 @@ function getCharacterFromSpeech(text) {
 function getNumberFromSpeech(text) {
   const normalized = text
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[^\w\s]/g, " ");
 
-  console.log("CHECKING:", normalized);
-
-  // digit fallback
-  const digitMatch = normalized.match(/\d+/);
-  if (digitMatch) return parseInt(digitMatch[0], 10);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
 
   const tokenMap = {
-    one: 1, two: 2, three: 3, four: 4, five: 5,
-    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
-
-    ενα: 1, ένα: 1,
-    δυο: 2, δύο: 2,
-    τρια: 3, τρία: 3,
-    τεσσερα: 4, τέσσερα: 4,
-    πεντε: 5, πέντε: 5,
-    εξι: 6, έξι: 6,
-    εφτα: 7, επτα: 7, εφτά: 7, επτά: 7,
-    οκτω: 8, οκτώ: 8,
-    εννια: 9, εννέα: 9,
-    δεκα: 10, δέκα: 10,
-
-    ena: 1,
-    dio: 2, duo: 2,
-    tria: 3,
-    tessera: 4, tesera: 4,
-    pente: 5,
-    exi: 6,
-    efta: 7, epta: 7,
-    okto: 8,
-    ennia: 9, ennea: 9, enya: 9,
-    deka: 10
+    one: 1, ena: 1,
+    two: 2, dio: 2, duo: 2,
+    three: 3, tria: 3,
+    four: 4, tessera: 4, tesera: 4,
+    five: 5, pente: 5,
+    six: 6, exi: 6,
+    seven: 7, efta: 7, epta: 7,
+    eight: 8, okto: 8,
+    nine: 9, ennia: 9, ennea: 9, enya: 9,
+    ten: 10, deka: 10
   };
 
-  for (const [token, value] of Object.entries(tokenMap)) {
-    if (normalized.includes(token)) {
-      return value;
-    }
-  }
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const t = tokens[i];
 
-  const fuzzyMap = [
-    { key: ["faiv", "fai", "fiv"], value: 5 },
-    { key: ["tu", "to", "too"], value: 2 },
-    { key: ["tri", "tree"], value: 3 },
-    { key: ["for", "foor"], value: 4 },
-    { key: ["siks", "sex"], value: 6 },
-    { key: ["sef", "sevn"], value: 7 },
-    { key: ["okto", "ok"], value: 8 },
-    { key: ["nai", "naen"], value: 9 }
-  ];
+    if (/^\d+$/.test(t)) return parseInt(t, 10);
 
-  for (const f of fuzzyMap) {
-    if (f.key.some(k => normalized.includes(k))) {
-      return f.value;
+    if (tokenMap[t] !== undefined) {
+      return tokenMap[t];
     }
   }
 

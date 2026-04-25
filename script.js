@@ -2,7 +2,6 @@ const startGameButton = document.getElementById("startGameBtn");
 const startListeningButton = document.getElementById("startListeningBtn");
 const transcriptElement = document.getElementById("transcript");
 const statusElement = document.getElementById("listeningStatus");
-const languageSelect = document.getElementById("languageSelect");
 const selectionResultElement = document.getElementById("selectionResult");
 const selectionScreenElement = document.getElementById("selectionScreen");
 const gameScreenElement = document.getElementById("gameScreen");
@@ -452,7 +451,6 @@ if (!SpeechRecognition) {
     }
   }
 
-  languageSelect.value = "en-US";
 
   recognition.onstart = () => {
     isRecognitionRunning = true;

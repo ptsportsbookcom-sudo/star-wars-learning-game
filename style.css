@@ -6,13 +6,12 @@ body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #000;
-  background-image: radial-gradient(circle at top, #1a1f3a 0%, #06080f 46%, #000 100%),
-    radial-gradient(circle at 15% 20%, #ffffff40 1px, transparent 1px),
-    radial-gradient(circle at 80% 10%, #ffffff30 1px, transparent 1px),
-    radial-gradient(circle at 35% 70%, #ffffff30 1px, transparent 1px),
-    radial-gradient(circle at 65% 50%, #ffffff3f 1px, transparent 1px),
-    radial-gradient(circle at 22% 82%, #ffffff2e 1px, transparent 1px);
-  background-size: cover, 220px 220px, 260px 260px, 200px 200px, 180px 180px, 240px 240px;
+  background-image: radial-gradient(circle at top, #0b0f1a 0%, #000 70%),
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.24) 1px, transparent 1px),
+    radial-gradient(circle at 72% 16%, rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+    radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    radial-gradient(circle at 65% 52%, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  background-size: cover, 240px 240px, 300px 300px, 220px 220px, 180px 180px;
   color: #f5f5f5;
   min-height: 100vh;
   display: grid;
@@ -156,20 +155,26 @@ select {
 }
 
 .character-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   border: 2px solid transparent;
-  border-radius: 0.75rem;
-  text-align: left;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  padding: 0.65rem;
+  border-radius: 12px;
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 10px;
+}
+
+.character-card:hover {
+  transform: scale(1.05);
 }
 
 .character-card img {
   width: 100%;
-  height: 120px;
-  object-fit: cover;
+  height: 140px;
+  object-fit: contain;
+  background: #000;
   display: block;
   border-radius: 8px;
+  padding: 6px;
   margin-bottom: 0.5rem;
 }
 
@@ -210,7 +215,8 @@ body.state-lose {
 .battle-characters {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 1.2rem;
+  align-items: start;
 }
 
 .battle-card {
@@ -221,6 +227,7 @@ body.state-lose {
   transition: transform 0.2s ease, opacity 0.2s ease;
   position: relative;
   overflow: hidden;
+  text-align: center;
 }
 
 .battle-card.impact-flash::after {
@@ -259,10 +266,12 @@ body.flash-lose::after {
 #playerImage,
 #enemyImage {
   width: 100%;
-  height: 120px;
-  object-fit: cover;
+  height: 140px;
+  object-fit: contain;
+  background: #000;
   border-radius: 8px;
   display: block;
+  padding: 6px;
   margin: 0 0 0.55rem;
   transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
 }
@@ -286,6 +295,16 @@ body.flash-lose::after {
 #enemyImage.hit {
   animation: shake 0.3s linear;
   opacity: 0.75;
+}
+
+#playerImage.win-effect {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 12px rgba(90, 240, 130, 0.8));
+}
+
+#playerImage.lose-effect {
+  animation: shake 0.3s linear;
+  filter: drop-shadow(0 0 12px rgba(255, 90, 90, 0.8));
 }
 
 #enemyImage.hit {
@@ -320,6 +339,7 @@ body.flash-lose::after {
 
 #battleResult {
   margin-top: 0.85rem;
+  text-align: center;
 }
 
 #impactText {

@@ -151,16 +151,16 @@ if (!SpeechRecognition) {
       return;
     }
 
-    let combinedTranscript = "";
+    let finalTranscript = "";
 
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      if (!event.results[i].isFinal) {
-        return;
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
       }
-      combinedTranscript += event.results[i][0].transcript;
     }
 
-    const cleanedTranscript = combinedTranscript.trim();
+    const cleanedTranscript = finalTranscript.trim();
+    console.log("FINAL:", cleanedTranscript);
     console.log("TRANSCRIPT:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
@@ -175,11 +175,7 @@ if (!SpeechRecognition) {
     isProcessing = true;
 
     try {
-      if (characterSelected) {
-        return;
-      }
-
-      if (gameState !== "waiting_for_character") {
+      if (gameState === "idle") {
         const shouldStartGame = allowedCommands.some((command) =>
           normalizedTranscript.includes(command)
         );
@@ -191,6 +187,10 @@ if (!SpeechRecognition) {
       }
 
       if (gameState === "waiting_for_character") {
+        if (characterSelected) {
+          return;
+        }
+
         const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
 
         if (matchedCharacter) {

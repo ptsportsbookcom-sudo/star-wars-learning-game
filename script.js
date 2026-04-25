@@ -454,7 +454,7 @@ if (!SpeechRecognition) {
     hideListeningButton();
     voiceEnablePrompt.classList.add("hidden");
     setWaitingStatus();
-    recognition.lang = "en-US";
+    recognition.lang = "el-GR";
     transcriptElement.textContent = "You said: ...";
     playBackgroundMusic();
 
@@ -551,7 +551,7 @@ if (!SpeechRecognition) {
 
   recognition.onend = () => {
     isRecognitionRunning = false;
-    recognition.lang = "en-US";
+    recognition.lang = "el-GR";
     try {
       recognition.start();
     } catch (error) {

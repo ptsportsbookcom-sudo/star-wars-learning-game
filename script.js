@@ -25,6 +25,9 @@ let appIsActive = true;
 let restartPending = false;
 let musicEnabled = true;
 
+const HEROES = ["Luke Skywalker", "Chewbacca", "R2-D2"];
+const VILLAINS = ["Darth Vader", "Emperor", "Darth Maul"];
+
 bgMusicElement.volume = 0.2;
 
 function playBackgroundMusic() {
@@ -54,15 +57,17 @@ function updateSelectedCharacterCard(characterName) {
   });
 }
 
-function getAvailableCharacters() {
-  const cards = characterGridElement.querySelectorAll(".character-card");
-  return Array.from(cards).map((card) => card.dataset.character);
-}
-
 function getRandomEnemyCharacter(playerCharacter) {
-  const enemies = getAvailableCharacters().filter(
-    (name) => name !== playerCharacter
-  );
+  const playerIsHero = HEROES.includes(playerCharacter);
+  const playerIsVillain = VILLAINS.includes(playerCharacter);
+
+  let enemies = [];
+  if (playerIsHero) {
+    enemies = [...VILLAINS];
+  } else if (playerIsVillain) {
+    enemies = [...HEROES];
+  }
+
   if (!enemies.length) {
     return "Unknown";
   }

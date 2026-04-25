@@ -331,15 +331,18 @@ function getCharacterFromSpeech(text) {
 
 function getNumberFromSpeech(text) {
   const lower = text.toLowerCase();
-  const normalized = normalizeVoiceTranscript(text);
-  const combined = `${lower} ${normalized}`;
+  const normalizedText = normalizeVoiceTranscript(text);
+  const combined = `${lower} ${normalizedText}`;
+
+  console.log("RAW:", text);
+  console.log("NORMALIZED:", normalizedText);
 
   const map = [
     { value: 0, keys: ["0", "zero", "μηδέν", "miden"] },
     { value: 1, keys: ["1", "one", "ένα", "ena"] },
     { value: 2, keys: ["2", "two", "δύο", "dio", "duo"] },
     { value: 3, keys: ["3", "three", "τρία", "tria"] },
-    { value: 4, keys: ["4", "four", "τέσσερα", "tessera"] },
+    { value: 4, keys: ["4", "four", "τέσσερα", "tessera", "tesera"] },
     { value: 5, keys: ["5", "five", "πέντε", "pente"] },
     { value: 6, keys: ["6", "six", "έξι", "exi"] },
     { value: 7, keys: ["7", "seven", "επτά", "epta"] },
@@ -350,10 +353,12 @@ function getNumberFromSpeech(text) {
 
   for (const item of map) {
     if (item.keys.some((k) => combined.includes(k))) {
+      console.log("MATCHED NUMBER:", item.value);
       return item.value;
     }
   }
 
+  console.log("MATCHED NUMBER:", null);
   return null;
 }
 
@@ -438,7 +443,7 @@ if (!SpeechRecognition) {
     hideListeningButton();
     voiceEnablePrompt.classList.add("hidden");
     setWaitingStatus();
-    recognition.lang = languageSelect.value;
+    recognition.lang = "en-US";
     transcriptElement.textContent = "You said: ...";
     playBackgroundMusic();
 
@@ -447,9 +452,7 @@ if (!SpeechRecognition) {
     }
   }
 
-  languageSelect.addEventListener("change", () => {
-    recognition.lang = languageSelect.value;
-  });
+  languageSelect.value = "en-US";
 
   recognition.onstart = () => {
     isRecognitionRunning = true;
@@ -540,7 +543,7 @@ if (!SpeechRecognition) {
 
   recognition.onend = () => {
     isRecognitionRunning = false;
-    recognition.lang = languageSelect.value;
+    recognition.lang = "en-US";
     try {
       recognition.start();
     } catch (error) {

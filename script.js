@@ -23,7 +23,11 @@ if (!SpeechRecognition) {
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
-  const startCommands = ["start game", "ξεκίνα παιχνίδι", "ξεκινα παιχνιδι"];
+  const allowedCommands = ["start game", "ξεκίνα παιχνίδι"];
+
+  function normalizeTranscript(text) {
+    return text.toLowerCase().trim().replace(/\s+/g, " ");
+  }
 
   recognition.onstart = () => {
     statusElement.textContent = "Status: Listening...";
@@ -41,9 +45,9 @@ if (!SpeechRecognition) {
       cleanedTranscript || "..."
     }`;
 
-    const normalized = cleanedTranscript.toLowerCase();
-    const shouldStartGame = startCommands.some((command) =>
-      normalized.includes(command)
+    const normalizedTranscript = normalizeTranscript(cleanedTranscript);
+    const shouldStartGame = allowedCommands.some((command) =>
+      normalizedTranscript.includes(command)
     );
 
     if (shouldStartGame) {

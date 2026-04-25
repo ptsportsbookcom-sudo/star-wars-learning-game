@@ -178,6 +178,7 @@ select {
   border-radius: 8px;
   padding: 6px;
   margin-bottom: 0.5rem;
+  animation: idle 2s infinite ease-in-out;
 }
 
 .character-card p {
@@ -392,16 +393,59 @@ body.flash-lose::after {
   width: 100%;
 }
 
-@keyframes shake {
-  0%,
+@keyframes attack {
+  0% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(20px);
+  }
   100% {
     transform: translateX(0);
   }
+}
+
+@keyframes hit {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(1.1);
+    filter: brightness(2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(0);
+  }
   25% {
-    transform: translateX(-6px);
+    transform: translate(-3px, 3px);
+  }
+  50% {
+    transform: translate(3px, -3px);
   }
   75% {
-    transform: translateX(6px);
+    transform: translate(-3px, 3px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+@keyframes idle {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
   }
 }
 

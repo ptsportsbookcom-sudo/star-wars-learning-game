@@ -217,6 +217,16 @@ function runMiniFightAnimation(playerWon) {
   }, 800);
 }
 
+function animateAttack(attacker, defender, isPlayer) {
+  attacker.style.animation = "attack 0.4s ease";
+  defender.style.animation = "hit 0.4s ease";
+
+  setTimeout(() => {
+    attacker.style.animation = "idle 2s infinite ease-in-out";
+    defender.style.animation = "idle 2s infinite ease-in-out";
+  }, 400);
+}
+
 function resolveBattleRound(isCorrectAnswer) {
   if (!selectedCharacter || !enemyCharacter) {
     return;
@@ -239,6 +249,11 @@ function resolveBattleRound(isCorrectAnswer) {
 
 function handleCorrectAnswer() {
   setRandomBackground();
+  animateAttack(playerImageElement, enemyImageElement, true);
+  document.body.style.filter = "brightness(1.3)";
+  setTimeout(() => {
+    document.body.style.filter = "";
+  }, 400);
   playerImageElement.classList.remove("lose-effect");
   playerImageElement.classList.add("win-effect");
   setTimeout(() => {
@@ -259,6 +274,11 @@ function handleCorrectAnswer() {
 
 function handleWrongAnswer() {
   setRandomBackground();
+  animateAttack(enemyImageElement, playerImageElement, false);
+  document.body.style.animation = "shake 0.4s";
+  setTimeout(() => {
+    document.body.style.animation = "";
+  }, 400);
   playerImageElement.classList.remove("win-effect");
   playerImageElement.classList.add("lose-effect");
   setTimeout(() => {

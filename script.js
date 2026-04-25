@@ -16,6 +16,7 @@ const enemyNameElement = document.getElementById("enemyName");
 const playerImageElement = document.getElementById("playerImage");
 const enemyImageElement = document.getElementById("enemyImage");
 const questionDisplayElement = document.getElementById("questionDisplay");
+const questionImageElement = document.getElementById("questionImage");
 const battleResultElement = document.getElementById("battleResult");
 const impactTextElement = document.getElementById("impactText");
 
@@ -34,9 +35,15 @@ let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
 let ignoreSpeechUntil = 0;
+let gameMode = "math"; // default
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
+const LETTERS = [
+  { en: "A", el: "α", img: "Images/a.png" },
+  { en: "B", el: "β", img: "Images/b.png" },
+  { en: "C", el: "γ", img: "Images/c.png" },
+];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": "Images/Luke.png",
   "R2-D2": "Images/r2d2.png",
@@ -342,6 +349,34 @@ function getRandomInt(min, max) {
 }
 
 function generateQuestion() {
+  gameMode = Math.random() > 0.5 ? "math" : "alphabet";
+  console.log("MODE:", gameMode);
+
+  if (gameMode === "alphabet") {
+    const randomLetter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+
+    currentQuestion = {
+      type: "alphabet",
+      answers: [randomLetter.en.toLowerCase(), randomLetter.el.toLowerCase()],
+    };
+
+    answerLocked = false;
+    questionDisplayElement.textContent = "What letter is this?";
+    battleResultElement.textContent = "Battle result: Ready to fight";
+    setRandomBackground();
+    setQuestionBackground();
+
+    if (questionImageElement) {
+      questionImageElement.src = randomLetter.img;
+      questionImageElement.alt = `Letter ${randomLetter.en}`;
+      questionImageElement.classList.remove("hidden");
+    }
+
+    speakMessage("What letter is this?");
+    setGameState("answer");
+    return;
+  }
+
   const a = getRandomInt(1, 5);
   const b = getRandomInt(1, 5);
   const key = `${a}-${b}`;
@@ -353,6 +388,7 @@ function generateQuestion() {
 
   lastQuestion = key;
   currentQuestion = {
+    type: "math",
     a,
     b,
     answer: a + b,
@@ -360,6 +396,9 @@ function generateQuestion() {
 
   answerLocked = false;
   questionDisplayElement.textContent = `${a} + ${b} = ?`;
+  if (questionImageElement) {
+    questionImageElement.classList.add("hidden");
+  }
   battleResultElement.textContent = "Battle result: Ready to fight";
   setRandomBackground();
   setQuestionBackground();
@@ -583,6 +622,19 @@ if (!SpeechRecognition) {
 
     if (gameState === "answer") {
       if (answerLocked) {
+        return;
+      }
+
+      if (currentQuestion && currentQuestion.type === "alphabet") {
+        const answer = cleanedTranscript.toLowerCase();
+        const isCorrect = currentQuestion.answers.some((a) => answer.includes(a));
+
+        answerLocked = true;
+        if (isCorrect) {
+          handleCorrectAnswer();
+        } else {
+          handleWrongAnswer();
+        }
         return;
       }
 

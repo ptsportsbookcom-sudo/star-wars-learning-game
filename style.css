@@ -362,6 +362,14 @@ body.flash-lose::after {
   font-size: 0.95rem;
 }
 
+#questionImage {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin: 0.4rem auto 0.1rem;
+  display: block;
+}
+
 #battleResult {
   margin-top: 0.85rem;
   text-align: center;

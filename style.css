@@ -215,6 +215,17 @@ body.state-lose {
   border-radius: 0.6rem;
   padding: 0.75rem;
   transition: transform 0.2s ease, opacity 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.battle-card.impact-flash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.45), transparent 70%);
+  animation: impactFlash 0.22s ease-out;
+  pointer-events: none;
 }
 
 .battle-label {
@@ -231,6 +242,28 @@ body.state-lose {
   border-radius: 8px;
   display: block;
   margin: 0 0 0.55rem;
+  transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+#playerImage.idle,
+#enemyImage.idle {
+  transform: scale(1) translateX(0);
+  opacity: 1;
+  filter: none;
+}
+
+#playerImage.attack {
+  transform: scale(1.1) translateX(10px);
+}
+
+#enemyImage.attack {
+  transform: scale(1.1) translateX(-10px);
+}
+
+#playerImage.hit,
+#enemyImage.hit {
+  animation: shake 0.3s linear;
+  opacity: 0.75;
 }
 
 #playerName,
@@ -259,18 +292,6 @@ body.state-lose {
   padding: 1rem;
 }
 
-.attack {
-  transform: scale(1.08);
-}
-
-.shake {
-  animation: shake 0.35s linear;
-}
-
-.fade {
-  opacity: 0.35;
-}
-
 @keyframes shake {
   0%,
   100% {
@@ -281,5 +302,14 @@ body.state-lose {
   }
   75% {
     transform: translateX(6px);
+  }
+}
+
+@keyframes impactFlash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }

@@ -131,6 +131,40 @@ function triggerEffect(element, className, durationMs = 450) {
   }, durationMs);
 }
 
+function resetFighterAnimationState() {
+  playerImageElement.classList.remove("attack", "hit");
+  enemyImageElement.classList.remove("attack", "hit");
+  playerImageElement.classList.add("idle");
+  enemyImageElement.classList.add("idle");
+}
+
+function runMiniFightAnimation(playerWon) {
+  resetFighterAnimationState();
+  playerImageElement.classList.remove("idle");
+  enemyImageElement.classList.remove("idle");
+
+  let hitCardElement = enemyCardElement;
+  if (playerWon) {
+    playerImageElement.classList.add("attack");
+    enemyImageElement.classList.add("hit");
+  } else {
+    enemyImageElement.classList.add("attack");
+    playerImageElement.classList.add("hit");
+    hitCardElement = playerCardElement;
+  }
+
+  hitCardElement.classList.remove("impact-flash");
+  void hitCardElement.offsetWidth;
+  hitCardElement.classList.add("impact-flash");
+  setTimeout(() => {
+    hitCardElement.classList.remove("impact-flash");
+  }, 260);
+
+  setTimeout(() => {
+    resetFighterAnimationState();
+  }, 800);
+}
+
 function resolveBattleRound(isCorrectAnswer) {
   if (!selectedCharacter || !enemyCharacter) {
     return;
@@ -140,15 +174,12 @@ function resolveBattleRound(isCorrectAnswer) {
     battleResultElement.textContent = "You Win!";
     speakMessage("Correct!");
     applyOutcomeOverlay("state-win");
-    triggerEffect(playerCardElement, "attack");
-    triggerEffect(enemyCardElement, "shake");
-    triggerEffect(enemyCardElement, "fade", 650);
+    runMiniFightAnimation(true);
   } else {
-    battleResultElement.textContent = "Try again";
-    speakMessage("Try again");
+    battleResultElement.textContent = "You Lose!";
+    speakMessage("You Lose!");
     applyOutcomeOverlay("state-lose");
-    triggerEffect(enemyCardElement, "attack");
-    triggerEffect(playerCardElement, "shake");
+    runMiniFightAnimation(false);
   }
 }
 
@@ -175,6 +206,7 @@ function setCharacterImage(imgElement, characterName) {
   console.log("Loading image:", imagePath);
   imgElement.src = imagePath;
   imgElement.alt = characterName;
+  imgElement.classList.add("idle");
 }
 
 function getRandomInt(min, max) {

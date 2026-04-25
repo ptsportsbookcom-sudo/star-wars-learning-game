@@ -350,16 +350,16 @@ function getNumberFromSpeech(text) {
   console.log("NORMALIZED:", normalized);
 
   const map = [
-    { value: 1, keys: ["1", "one", "ena", "ena", "ένα"] },
-    { value: 2, keys: ["2", "two", "dio", "duo", "δύο"] },
-    { value: 3, keys: ["3", "three", "tria", "τρια", "τρία"] },
-    { value: 4, keys: ["4", "four", "tessera", "tesera", "desera", "τέσσερα"] },
-    { value: 5, keys: ["5", "five", "pente", "πεντε", "πέντε"] },
-    { value: 6, keys: ["6", "six", "exi", "εξι", "έξι"] },
-    { value: 7, keys: ["7", "seven", "epta", "επτα", "επτά"] },
-    { value: 8, keys: ["8", "eight", "okto", "οκτω", "οκτώ"] },
-    { value: 9, keys: ["9", "nine", "ennia", "ennea", "εννια", "εννέα"] },
-    { value: 10, keys: ["10", "ten", "deka", "δεκα", "δέκα"] },
+    { value: 1, keys: ["1", "one", "ena"] },
+    { value: 2, keys: ["2", "two", "dio", "duo"] },
+    { value: 3, keys: ["3", "three", "tria"] },
+    { value: 4, keys: ["4", "four", "tessera", "tesera", "desera"] },
+    { value: 5, keys: ["5", "five", "pente"] },
+    { value: 6, keys: ["6", "six", "exi"] },
+    { value: 7, keys: ["7", "seven", "epta"] },
+    { value: 8, keys: ["8", "eight", "okto"] },
+    { value: 9, keys: ["9", "nine", "ennia", "ennea"] },
+    { value: 10, keys: ["10", "ten", "deka"] },
   ];
 
   for (const item of map) {
@@ -454,7 +454,7 @@ if (!SpeechRecognition) {
     hideListeningButton();
     voiceEnablePrompt.classList.add("hidden");
     setWaitingStatus();
-    recognition.lang = "el-GR";
+    recognition.lang = "en-US";
     transcriptElement.textContent = "You said: ...";
     playBackgroundMusic();
 
@@ -474,13 +474,13 @@ if (!SpeechRecognition) {
       return;
     }
 
-    let transcript = "";
+    let combinedTranscript = "";
 
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      transcript += event.results[i][0].transcript;
+      combinedTranscript += event.results[i][0].transcript;
     }
 
-    const cleanedTranscript = transcript.trim();
+    const cleanedTranscript = combinedTranscript.trim();
     console.log("HEARD:", cleanedTranscript);
     transcriptElement.textContent = `You said: ${
       cleanedTranscript || "..."
@@ -551,7 +551,7 @@ if (!SpeechRecognition) {
 
   recognition.onend = () => {
     isRecognitionRunning = false;
-    recognition.lang = "el-GR";
+    recognition.lang = "en-US";
     try {
       recognition.start();
     } catch (error) {

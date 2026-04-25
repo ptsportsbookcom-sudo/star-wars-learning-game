@@ -4,16 +4,20 @@ const transcriptElement = document.getElementById("transcript");
 const statusElement = document.getElementById("listeningStatus");
 const languageSelect = document.getElementById("languageSelect");
 const selectionResultElement = document.getElementById("selectionResult");
+const voiceEnablePrompt = document.getElementById("voiceEnablePrompt");
 
 let selectedCharacter = "";
 let waitingForCharacter = false;
+let voiceActivated = false;
+let shouldKeepListening = false;
+let isRecognitionRunning = false;
 
 function speakMessage(message) {
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(message);
     window.speechSynthesis.speak(utterance);
   }
-  statusElement.textContent = `Status: ${message}`;
+  statusElement.textContent = message;
 }
 
 function startGame() {
@@ -31,11 +35,10 @@ const SpeechRecognition =
 
 if (!SpeechRecognition) {
   startListeningButton.disabled = true;
-  statusElement.textContent =
-    "Status: Speech recognition is not supported in this browser.";
+  statusElement.textContent = "Speech recognition is not supported in this browser.";
 } else {
   const recognition = new SpeechRecognition();
-  recognition.continuous = false;
+  recognition.continuous = true;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
@@ -60,8 +63,34 @@ if (!SpeechRecognition) {
     return match ? match.character : "";
   }
 
+  function setWaitingStatus() {
+    statusElement.textContent = "Waiting for command...";
+  }
+
+  function hideListeningButton() {
+    startListeningButton.classList.add("hidden");
+  }
+
+  function enableVoiceMode() {
+    if (voiceActivated) {
+      return;
+    }
+    voiceActivated = true;
+    shouldKeepListening = true;
+    hideListeningButton();
+    voiceEnablePrompt.classList.add("hidden");
+    setWaitingStatus();
+    recognition.lang = languageSelect.value;
+    transcriptElement.textContent = "You said: ...";
+
+    if (!isRecognitionRunning) {
+      recognition.start();
+    }
+  }
+
   recognition.onstart = () => {
-    statusElement.textContent = "Status: Listening...";
+    isRecognitionRunning = true;
+    statusElement.textContent = "Listening...";
   };
 
   recognition.onresult = (event) => {
@@ -105,19 +134,52 @@ if (!SpeechRecognition) {
   };
 
   recognition.onerror = (event) => {
-    statusElement.textContent = `Status: Error (${event.error})`;
+    isRecognitionRunning = false;
+
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      shouldKeepListening = false;
+      voiceActivated = false;
+      voiceEnablePrompt.classList.remove("hidden");
+      statusElement.textContent = "Tap anywhere once to enable voice";
+      return;
+    }
+
+    statusElement.textContent = `Error: ${event.error}`;
   };
 
   recognition.onend = () => {
-    if (!statusElement.textContent.startsWith("Status: Error")) {
-      statusElement.textContent = "Status: Idle";
+    isRecognitionRunning = false;
+
+    if (shouldKeepListening) {
+      recognition.lang = languageSelect.value;
+      setTimeout(() => {
+        if (!isRecognitionRunning && shouldKeepListening) {
+          recognition.start();
+        }
+      }, 250);
+    } else {
+      if (voiceEnablePrompt.classList.contains("hidden")) {
+        setWaitingStatus();
+      }
     }
   };
 
-  startListeningButton.addEventListener("click", () => {
-    recognition.lang = languageSelect.value;
-    statusElement.textContent = "Status: Starting microphone...";
-    transcriptElement.textContent = "You said: ...";
-    recognition.start();
-  });
+  function handleFirstInteraction() {
+    enableVoiceMode();
+    window.removeEventListener("pointerdown", handleFirstInteraction);
+    window.removeEventListener("keydown", handleFirstInteraction);
+  }
+
+  window.addEventListener("pointerdown", handleFirstInteraction);
+  window.addEventListener("keydown", handleFirstInteraction);
+
+  startListeningButton.addEventListener("click", enableVoiceMode);
+
+  // Try auto-start immediately; if blocked, we ask for one tap.
+  try {
+    enableVoiceMode();
+  } catch (error) {
+    voiceEnablePrompt.classList.remove("hidden");
+    statusElement.textContent = "Tap anywhere once to enable voice";
+  }
 }

@@ -18,6 +18,24 @@ body {
   width: min(92vw, 600px);
 }
 
+.hidden {
+  display: none !important;
+}
+
+.voice-enable-prompt {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.75);
+  color: #feda4a;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 700;
+  z-index: 1000;
+}
+
 h1 {
   margin: 0 0 1.5rem;
   font-size: 2rem;

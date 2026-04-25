@@ -8,6 +8,7 @@ const voiceEnablePrompt = document.getElementById("voiceEnablePrompt");
 
 let selectedCharacter = "";
 let gameState = "idle";
+let characterSelected = false;
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
@@ -23,6 +24,7 @@ function speakMessage(message) {
 function startGame() {
   alert("Game started");
   gameState = "waiting_for_character";
+  characterSelected = false;
   selectedCharacter = "";
   selectionResultElement.textContent = "You chose: ...";
   speakMessage("Choose your character by saying their name");
@@ -119,26 +121,36 @@ if (!SpeechRecognition) {
       return;
     }
 
+    console.log("STATE:", gameState);
+
+    if (characterSelected) {
+      return;
+    }
+
+    if (gameState !== "waiting_for_character") {
+      const shouldStartGame = allowedCommands.some((command) =>
+        normalizedTranscript.includes(command)
+      );
+
+      if (shouldStartGame) {
+        startGame();
+      }
+      return;
+    }
+
     if (gameState === "waiting_for_character") {
       const matchedCharacter = findCharacterFromTranscript(normalizedTranscript);
 
       if (matchedCharacter) {
         selectedCharacter = matchedCharacter;
+        characterSelected = true;
         gameState = "in_game";
         selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
-        speakMessage(`Great choice! You chose ${selectedCharacter}.`);
+        speakMessage("Get ready...");
       } else {
         speakMessage("I didn't understand, try again");
       }
       return;
-    }
-
-    const shouldStartGame = allowedCommands.some((command) =>
-      normalizedTranscript.includes(command)
-    );
-
-    if (shouldStartGame) {
-      startGame();
     }
   };
 

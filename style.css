@@ -98,3 +98,46 @@ select {
   margin: 0.75rem 0 0;
   line-height: 1.4;
 }
+
+.characters-panel {
+  margin-top: 1.25rem;
+}
+
+.characters-panel h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.character-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.character-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.character-card img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  display: block;
+}
+
+.character-card p {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  font-weight: 600;
+}
+
+.character-card.selected {
+  border-color: #feda4a;
+  box-shadow: 0 0 0 3px rgba(254, 218, 74, 0.25);
+}

@@ -5,6 +5,34 @@ const statusElement = document.getElementById("listeningStatus");
 const languageSelect = document.getElementById("languageSelect");
 const selectionResultElement = document.getElementById("selectionResult");
 const voiceEnablePrompt = document.getElementById("voiceEnablePrompt");
+const characterGridElement = document.getElementById("characterGrid");
+
+const characters = [
+  {
+    name: "Luke Skywalker",
+    image: "https://starwars-visualguide.com/assets/img/characters/1.jpg",
+  },
+  {
+    name: "Chewbacca",
+    image: "https://starwars-visualguide.com/assets/img/characters/13.jpg",
+  },
+  {
+    name: "Darth Vader",
+    image: "https://starwars-visualguide.com/assets/img/characters/4.jpg",
+  },
+  {
+    name: "Emperor",
+    image: "https://starwars-visualguide.com/assets/img/characters/21.jpg",
+  },
+  {
+    name: "R2-D2",
+    image: "https://starwars-visualguide.com/assets/img/characters/3.jpg",
+  },
+  {
+    name: "Darth Maul",
+    image: "https://starwars-visualguide.com/assets/img/characters/44.jpg",
+  },
+];
 
 let selectedCharacter = "";
 let gameState = "idle";
@@ -12,6 +40,27 @@ let characterSelected = false;
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
+
+function renderCharacterCards() {
+  characterGridElement.innerHTML = characters
+    .map(
+      (character) => `
+        <article class="character-card" data-character="${character.name}">
+          <img src="${character.image}" alt="${character.name}" loading="lazy" />
+          <p>${character.name}</p>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function updateSelectedCharacterCard(characterName) {
+  const cards = characterGridElement.querySelectorAll(".character-card");
+  cards.forEach((card) => {
+    const isSelected = card.dataset.character === characterName;
+    card.classList.toggle("selected", isSelected);
+  });
+}
 
 function speakMessage(message) {
   if ("speechSynthesis" in window) {
@@ -27,10 +76,12 @@ function startGame() {
   characterSelected = false;
   selectedCharacter = "";
   selectionResultElement.textContent = "You chose: ...";
+  updateSelectedCharacterCard("");
   speakMessage("Choose your character by saying their name");
 }
 
 startGameButton.addEventListener("click", startGame);
+renderCharacterCards();
 
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -146,6 +197,7 @@ if (!SpeechRecognition) {
         characterSelected = true;
         gameState = "in_game";
         selectionResultElement.textContent = `You chose: ${selectedCharacter}`;
+        updateSelectedCharacterCard(selectedCharacter);
         speakMessage("Get ready...");
       } else {
         speakMessage("I didn't understand, try again");

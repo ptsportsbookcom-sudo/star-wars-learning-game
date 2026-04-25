@@ -43,15 +43,37 @@ const CHARACTER_IMAGES = {
   "Darth Vader": "Images/Darth.png",
   Emperor: "Images/Emperor.png",
 };
+const BACKGROUND_IMAGES = [
+  "Images/Designer (1).png",
+  "Images/Designer (2).png",
+  "Images/Designer (3).png",
+  "Images/Designer (4).png",
+  "Images/Designer (5).png",
+  "Images/Designer (6).png",
+  "Images/Designer (7).png",
+  "Images/Designer (8).png",
+  "Images/Designer (9).png",
+  "Images/Designer (10).png",
+  "Images/e.png",
+  "Images/f.png",
+];
+const MUSIC_TRACKS = [
+  "audio/music1.mp3",
+  "audio/music2.mp3",
+  "audio/music3.mp3",
+];
 bgMusicElement.volume = 0.2;
 
 function playBackgroundMusic() {
-  if (!musicEnabled) {
-    return;
+  if (!musicEnabled) return;
+
+  const randomTrack = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+
+  if (!bgMusicElement.src.includes(randomTrack)) {
+    bgMusicElement.src = randomTrack;
   }
-  bgMusicElement.play().catch(() => {
-    // Playback may still be blocked until user interaction.
-  });
+
+  bgMusicElement.play().catch(() => {});
 }
 
 musicToggleButton.addEventListener("click", () => {
@@ -104,6 +126,19 @@ function setBattleBackground(mode) {
     currentBackgroundTheme = mode;
     document.body.classList.add(mode);
   }
+}
+
+function setRandomBackground() {
+  const random =
+    BACKGROUND_IMAGES[Math.floor(Math.random() * BACKGROUND_IMAGES.length)];
+
+  document.body.style.backgroundImage = `
+    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)),
+    url('${random}')
+  `;
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backgroundPosition = "center";
+  document.body.style.backgroundRepeat = "no-repeat";
 }
 
 function applyOutcomeOverlay(outcomeClass) {
@@ -203,6 +238,7 @@ function resolveBattleRound(isCorrectAnswer) {
 }
 
 function handleCorrectAnswer() {
+  setRandomBackground();
   playerImageElement.classList.remove("lose-effect");
   playerImageElement.classList.add("win-effect");
   setTimeout(() => {
@@ -222,6 +258,7 @@ function handleCorrectAnswer() {
 }
 
 function handleWrongAnswer() {
+  setRandomBackground();
   playerImageElement.classList.remove("win-effect");
   playerImageElement.classList.add("lose-effect");
   setTimeout(() => {
@@ -296,6 +333,7 @@ function generateQuestion() {
   answerLocked = false;
   questionDisplayElement.textContent = `${a} + ${b} = ?`;
   battleResultElement.textContent = "Battle result: Ready to fight";
+  setRandomBackground();
   setQuestionBackground();
   setGameState("answer");
   speakMessage(`What is ${a} plus ${b}?`);
@@ -387,6 +425,7 @@ function selectCharacter(character) {
   gameScreenElement.classList.remove("hidden");
   setBattleBackground("theme-battle");
   applyOutcomeOverlay("");
+  playBackgroundMusic();
   speakMessage("Get ready");
   generateQuestion();
 }
@@ -412,6 +451,7 @@ function startGame() {
   updateSelectedCharacterCard("");
   setBattleBackground("theme-space");
   applyOutcomeOverlay("");
+  playBackgroundMusic();
   selectionScreenElement.classList.remove("hidden");
   gameScreenElement.classList.add("hidden");
   speakMessage("Choose your character by saying their name");

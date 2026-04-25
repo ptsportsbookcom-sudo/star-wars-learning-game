@@ -258,6 +258,10 @@ function resolveBattleRound(isCorrectAnswer) {
 function handleCorrectAnswer() {
   resolveBattleRound(true);
   setGameState("result");
+  document.body.classList.add("flash-win");
+  setTimeout(() => {
+    document.body.classList.remove("flash-win");
+  }, 200);
 
   // SHOW ATTACK VS LOSE
   setCharacterImage(playerImageElement, selectedCharacter, "attack");
@@ -283,6 +287,10 @@ function handleCorrectAnswer() {
 function handleWrongAnswer() {
   resolveBattleRound(false);
   setGameState("result");
+  document.body.classList.add("flash-lose");
+  setTimeout(() => {
+    document.body.classList.remove("flash-lose");
+  }, 200);
 
   // ENEMY ATTACK
   setCharacterImage(playerImageElement, selectedCharacter, "lose");
@@ -341,6 +349,20 @@ function getRandomInt(min, max) {
 }
 
 function generateQuestion() {
+  battleResultElement.textContent = "Ready to fight";
+  setCharacterImage(playerImageElement, selectedCharacter, "idle");
+  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+  document.body.classList.remove("flash-win", "flash-lose");
+  questionDisplayElement.style.transform = "scale(0.7)";
+  questionDisplayElement.style.opacity = "0";
+  setTimeout(() => {
+    questionDisplayElement.style.transform = "scale(1.1)";
+    questionDisplayElement.style.opacity = "1";
+  }, 100);
+  setTimeout(() => {
+    questionDisplayElement.style.transform = "scale(1)";
+  }, 250);
+
   gameMode = ["math", "alphabet", "object"][Math.floor(Math.random() * 3)];
   answerAcceptAt = Date.now() + 2000;
   console.log("MODE:", gameMode);
@@ -355,7 +377,7 @@ function generateQuestion() {
 
     answerLocked = false;
     questionDisplayElement.textContent = `Say this letter: ${letter.en} (${letter.el})`;
-    battleResultElement.textContent = "Battle result: Ready to fight";
+    battleResultElement.textContent = "Ready to fight";
     setRandomBackground();
     setQuestionBackground();
 
@@ -379,7 +401,7 @@ function generateQuestion() {
 
     answerLocked = false;
     questionDisplayElement.textContent = "What is this?";
-    battleResultElement.textContent = "Battle result: Ready to fight";
+    battleResultElement.textContent = "Ready to fight";
     setRandomBackground();
     setQuestionBackground();
 
@@ -416,7 +438,7 @@ function generateQuestion() {
   if (questionImageElement) {
     questionImageElement.classList.add("hidden");
   }
-  battleResultElement.textContent = "Battle result: Ready to fight";
+  battleResultElement.textContent = "Ready to fight";
   setRandomBackground();
   setQuestionBackground();
   setGameState("answer");

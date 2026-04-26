@@ -262,25 +262,24 @@ function handleCorrectAnswer() {
     document.body.classList.remove("flash-win");
   }, 200);
 
-  // SHOW ATTACK VS LOSE
-  setCharacterImage(playerImageElement, selectedCharacter, "attack");
+  // SHOW WINNER MOMENT
+  playerImageElement.src = HEROES.includes(selectedCharacter)
+    ? "Images/good guy wins final.png"
+    : "Images/bad guy wins.png";
+  playerImageElement.alt = `${selectedCharacter} wins`;
+  playerImageElement.classList.remove("attack", "lose", "idle");
+  playerImageElement.classList.add("attack");
   setCharacterImage(enemyImageElement, enemyCharacter, "lose");
 
   speakMessage("Correct!");
 
-  // WAIT 10 SECONDS (NO INPUT)
+  // WAIT 5 SECONDS BEFORE NEXT QUESTION
   setTimeout(() => {
-    // RESET TO DEFEND
     setCharacterImage(playerImageElement, selectedCharacter, "idle");
     setCharacterImage(enemyImageElement, enemyCharacter, "idle");
-
-    // WAIT 5 SECONDS BEFORE NEXT QUESTION
-    setTimeout(() => {
-      answerLocked = false;
-      generateQuestion();
-    }, 5000);
-
-  }, 10000);
+    answerLocked = false;
+    generateQuestion();
+  }, 5000);
 }
 
 function handleWrongAnswer() {
@@ -291,22 +290,23 @@ function handleWrongAnswer() {
     document.body.classList.remove("flash-lose");
   }, 200);
 
-  // ENEMY ATTACK
+  // ENEMY WINNER MOMENT
   setCharacterImage(playerImageElement, selectedCharacter, "lose");
-  setCharacterImage(enemyImageElement, enemyCharacter, "attack");
+  enemyImageElement.src = HEROES.includes(enemyCharacter)
+    ? "Images/good guy wins final.png"
+    : "Images/bad guy wins.png";
+  enemyImageElement.alt = `${enemyCharacter} wins`;
+  enemyImageElement.classList.remove("attack", "lose", "idle");
+  enemyImageElement.classList.add("attack");
 
   speakMessage("Wrong!");
 
   setTimeout(() => {
     setCharacterImage(playerImageElement, selectedCharacter, "idle");
     setCharacterImage(enemyImageElement, enemyCharacter, "idle");
-
-    setTimeout(() => {
-      answerLocked = false;
-      generateQuestion();
-    }, 5000);
-
-  }, 10000);
+    answerLocked = false;
+    generateQuestion();
+  }, 5000);
 }
 
 function speakMessage(message) {
@@ -757,35 +757,36 @@ if (!SpeechRecognition) {
 
     // ALPHABET
     if (currentQuestion.type === "alphabet") {
-      const isCorrect = currentQuestion.answers.some(a =>
-        transcript.includes(a)
-      );
+      const answer = normalizeGreek(transcript);
+      const allAnswers = currentQuestion.answers.map((a) => normalizeGreek(a));
+      const isCorrect = allAnswers.some((a) => answer.includes(a));
+
+      // Ignore tiny/noisy chunks instead of auto-wrong.
+      if (answer.replace(/\s+/g, "").length < 2) return;
+
+      if (!isCorrect) return;
 
       answerLocked = true;
-
-      if (isCorrect) {
-        handleCorrectAnswer();
-      } else {
-        handleWrongAnswer();
-      }
+      handleCorrectAnswer();
 
       return;
     }
 
     // OBJECT
     if (currentQuestion.type === "object") {
+      const answer = normalizeGreek(transcript);
       const isCorrect = [
         ...currentQuestion.answers,
         ...(currentQuestion.alt || [])
-      ].some(a => transcript.includes(a));
+      ].some(a => answer.includes(normalizeGreek(a)));
+
+      // Ignore tiny/noisy chunks instead of auto-wrong.
+      if (answer.replace(/\s+/g, "").length < 2) return;
+
+      if (!isCorrect) return;
 
       answerLocked = true;
-
-      if (isCorrect) {
-        handleCorrectAnswer();
-      } else {
-        handleWrongAnswer();
-      }
+      handleCorrectAnswer();
 
       return;
     }

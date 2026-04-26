@@ -94,7 +94,7 @@ body.theme-battle {
   z-index: 1300;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.96);
   text-align: center;
   padding: 20px;
 }
@@ -336,7 +336,7 @@ body.flash-lose {
 #enemyImage {
   width: 100%;
   max-width: 260px;
-  height: 120px;
+  height: 220px;
   object-fit: contain;
   background: #000;
   border-radius: 8px;

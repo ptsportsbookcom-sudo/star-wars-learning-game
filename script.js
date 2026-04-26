@@ -349,6 +349,14 @@ function showRoundSplash(winnerCharacter, message) {
   }, 1700);
 }
 
+function getAllObjectAliases() {
+  const aliases = [];
+  OBJECTS.forEach((obj) => {
+    aliases.push(obj.name, obj.el, ...(obj.alt || []));
+  });
+  return aliases.map((a) => normalizeGreek(String(a)));
+}
+
 function showMatchOutcomeIcon(winnerCharacter, loserCharacter, winnerOnPlayerSide) {
   const winnerImage = winnerOnPlayerSide ? playerImageElement : enemyImageElement;
   const loserImage = winnerOnPlayerSide ? enemyImageElement : playerImageElement;
@@ -432,11 +440,14 @@ function handleCorrectAnswer() {
     document.body.classList.remove("flash-win");
   }, 200);
 
-  // SHOW ATTACK VS LOSE
-  setCharacterImage(playerImageElement, selectedCharacter, "attack");
-  setCharacterImage(enemyImageElement, enemyCharacter, "lose");
-
-  speakMessage("Correct!");
+  // Keep cards neutral while full-screen splash is visible.
+  setCharacterImage(playerImageElement, selectedCharacter, "idle");
+  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+  if (!isMobile) {
+    speakMessage("Correct!");
+  } else {
+    statusElement.textContent = "Correct!";
+  }
 
   // WAIT 5 SECONDS BEFORE NEXT QUESTION
   if (nextRoundTimeout) {
@@ -467,11 +478,14 @@ function handleWrongAnswer() {
     document.body.classList.remove("flash-lose");
   }, 200);
 
-  // ENEMY ATTACK
-  setCharacterImage(playerImageElement, selectedCharacter, "lose");
-  setCharacterImage(enemyImageElement, enemyCharacter, "attack");
-
-  speakMessage("Wrong!");
+  // Keep cards neutral while full-screen splash is visible.
+  setCharacterImage(playerImageElement, selectedCharacter, "idle");
+  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+  if (!isMobile) {
+    speakMessage("Wrong!");
+  } else {
+    statusElement.textContent = "Wrong!";
+  }
 
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
@@ -973,7 +987,7 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
-    const result = event.results[event.results.length - 1];
+    const result = event.results[event.resultIndex] || event.results[event.results.length - 1];
     if (!result || !result[0]) return;
     const transcript = result[0].transcript.trim().toLowerCase();
 
@@ -1064,7 +1078,13 @@ if (!SpeechRecognition) {
       if (isCorrect) {
         handleCorrectAnswer();
       } else {
-        handleWrongAnswer();
+        // Mark wrong only when speech resembles a known object word.
+        const knownObjectSaid = getAllObjectAliases().some((a) => isCloseWordMatch(answer, a));
+        if (knownObjectSaid) {
+          handleWrongAnswer();
+        } else {
+          answerLocked = false;
+        }
       }
 
       return;

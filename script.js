@@ -709,7 +709,31 @@ if (!SpeechRecognition) {
     if (!transcript) return;
 
     console.log("HEARD:", transcript);
+    console.log("STATE:", gameState);
     transcriptElement.textContent = `You said: ${transcript}`;
+
+    const normalizedTranscript = normalizeVoiceTranscript(transcript);
+    if (!normalizedTranscript) return;
+
+    if (gameState === "idle") {
+      const startMatch = allowedCommands.some((command) =>
+        normalizedTranscript.includes(command)
+      );
+      if (startMatch) {
+        startGame();
+      }
+      return;
+    }
+
+    if (gameState === "choose_character") {
+      const character = getCharacterFromSpeech(transcript);
+      if (character) {
+        selectCharacter(character);
+      }
+      return;
+    }
+
+    if (gameState !== "answer") return;
 
     if (!currentQuestion) return;
     if (answerLocked) return;

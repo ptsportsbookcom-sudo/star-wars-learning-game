@@ -631,7 +631,7 @@ if (!SpeechRecognition) {
 } else {
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
-  recognition.interimResults = false;
+  recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
   const allowedCommands = ["start", "ξεκινα"];
@@ -767,6 +767,7 @@ if (!SpeechRecognition) {
 
   recognition.onresult = (event) => {
     const result = event.results[event.results.length - 1];
+    if (!result || !result[0]) return;
     const transcript = result[0].transcript.trim().toLowerCase();
 
     if (!transcript) return;

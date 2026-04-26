@@ -21,6 +21,9 @@ const battleResultElement = document.getElementById("battleResult");
 const impactTextElement = document.getElementById("impactText");
 const resultPopupElement = document.getElementById("resultPopup");
 const streakDisplayElement = document.getElementById("streakDisplay");
+const roundSplashElement = document.getElementById("roundSplash");
+const roundSplashImageElement = document.getElementById("roundSplashImage");
+const roundSplashTextElement = document.getElementById("roundSplashText");
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
@@ -36,6 +39,7 @@ let currentQuestion = null;
 let nextRoundTimeout = null;
 let answerStuckTimeout = null;
 let resultPopupTimeout = null;
+let roundSplashTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
@@ -327,6 +331,24 @@ function getMatchWinImage(character) {
     : "Images/bad guy wins.png";
 }
 
+function showRoundSplash(winnerCharacter, message) {
+  if (!roundSplashElement || !roundSplashImageElement || !roundSplashTextElement) return;
+  if (roundSplashTimeout) {
+    clearTimeout(roundSplashTimeout);
+  }
+  roundSplashImageElement.src = getMatchWinImage(winnerCharacter);
+  roundSplashImageElement.alt = `${winnerCharacter} wins`;
+  roundSplashTextElement.textContent = message;
+  roundSplashElement.classList.remove("hidden", "show");
+  void roundSplashElement.offsetWidth;
+  roundSplashElement.classList.add("show");
+  roundSplashTimeout = setTimeout(() => {
+    roundSplashElement.classList.remove("show");
+    roundSplashElement.classList.add("hidden");
+    roundSplashTimeout = null;
+  }, 1700);
+}
+
 function showMatchOutcomeIcon(winnerCharacter, loserCharacter, winnerOnPlayerSide) {
   const winnerImage = winnerOnPlayerSide ? playerImageElement : enemyImageElement;
   const loserImage = winnerOnPlayerSide ? enemyImageElement : playerImageElement;
@@ -400,6 +422,7 @@ function resolveBattleRound(isCorrectAnswer) {
 function handleCorrectAnswer() {
   clearAnswerStuckTimer();
   handleScoreProgress(true);
+  showRoundSplash(selectedCharacter, "Great answer!");
   resolveBattleRound(true);
   setGameState("result");
   showResultPopup("CORRECT!", "win");
@@ -434,6 +457,7 @@ function handleCorrectAnswer() {
 function handleWrongAnswer() {
   clearAnswerStuckTimer();
   handleScoreProgress(false);
+  showRoundSplash(enemyCharacter, "Oops! Enemy attacks!");
   resolveBattleRound(false);
   setGameState("result");
   showResultPopup("TRY AGAIN!", "lose");
@@ -562,14 +586,14 @@ function generateQuestion() {
       answer: numberValue,
     };
     answerLocked = false;
-    questionDisplayElement.textContent = `Say this number: ${numberValue}`;
+    questionDisplayElement.textContent = `${numberValue}`;
     battleResultElement.textContent = "Ready to fight";
     setRandomBackground();
     setQuestionBackground();
     if (questionImageElement) {
       questionImageElement.classList.add("hidden");
     }
-    speakMessage(`Say number ${numberValue}`);
+    statusElement.textContent = "Say the number shown on screen.";
     setGameState("answer");
     scheduleAnswerStuckTimer();
     return;
@@ -842,6 +866,8 @@ if (!SpeechRecognition) {
     return (
       t.includes("what is") ||
       t.includes("say the letter") ||
+      t.includes("say number") ||
+      t.includes("say this number") ||
       t.includes("correct") ||
       t.includes("wrong") ||
       t.includes("get ready")
@@ -990,6 +1016,7 @@ if (!SpeechRecognition) {
 
     if (!currentQuestion) return;
     if (answerLocked) return;
+    if (isPromptEcho(transcript)) return;
 
     // MATH
     if (currentQuestion.type === "math") {

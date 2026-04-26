@@ -88,6 +88,29 @@ body.theme-battle {
   z-index: 1000;
 }
 
+.debug-panel {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  width: min(92vw, 420px);
+  z-index: 1400;
+  background: rgba(3, 8, 20, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #d9e7ff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.debug-panel p {
+  margin: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .round-splash {
   position: fixed;
   inset: 0;

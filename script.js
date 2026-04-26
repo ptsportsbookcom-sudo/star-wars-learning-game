@@ -24,6 +24,12 @@ const streakDisplayElement = document.getElementById("streakDisplay");
 const roundSplashElement = document.getElementById("roundSplash");
 const roundSplashImageElement = document.getElementById("roundSplashImage");
 const roundSplashTextElement = document.getElementById("roundSplashText");
+const debugModeElement = document.getElementById("debugMode");
+const debugStateElement = document.getElementById("debugState");
+const debugHeardElement = document.getElementById("debugHeard");
+const debugParsedElement = document.getElementById("debugParsed");
+const debugDecisionElement = document.getElementById("debugDecision");
+const debugScoreElement = document.getElementById("debugScore");
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
@@ -291,6 +297,17 @@ function showResultPopup(message, type) {
 function updateStreakDisplay() {
   if (!streakDisplayElement) return;
   streakDisplayElement.textContent = `Hero ${playerScore} - Enemy ${enemyScore} (first to ${TARGET_SCORE})`;
+  if (debugScoreElement) {
+    debugScoreElement.textContent = `${playerScore}-${enemyScore}`;
+  }
+}
+
+function updateDebugInfo({ mode, state, heard, parsed, decision } = {}) {
+  if (debugModeElement && mode !== undefined) debugModeElement.textContent = String(mode);
+  if (debugStateElement && state !== undefined) debugStateElement.textContent = String(state);
+  if (debugHeardElement && heard !== undefined) debugHeardElement.textContent = String(heard || "-");
+  if (debugParsedElement && parsed !== undefined) debugParsedElement.textContent = String(parsed);
+  if (debugDecisionElement && decision !== undefined) debugDecisionElement.textContent = String(decision);
 }
 
 function playOutcomeSound(kind) {
@@ -520,6 +537,7 @@ function setGameState(nextState) {
   if (gameState !== nextState) {
     console.log(`STATE: ${gameState} -> ${nextState}`);
     gameState = nextState;
+    updateDebugInfo({ state: gameState });
   }
 }
 
@@ -595,6 +613,7 @@ function generateQuestion() {
   gameMode = ROUND_MODES[roundModeIndex];
   roundModeIndex = (roundModeIndex + 1) % ROUND_MODES.length;
   console.log("MODE:", gameMode);
+  updateDebugInfo({ mode: gameMode, decision: "new question", parsed: "-" });
 
   if (gameMode === "number") {
     const numberValue = getRandomInt(1, 10);
@@ -771,15 +790,15 @@ function getNumberFromSpeech(text) {
   const tokens = normalized.split(/\s+/).filter(Boolean);
 
   const tokenMap = {
-    one: 1, ena: 1,
-    two: 2, dio: 2, duo: 2,
-    three: 3, tria: 3,
-    four: 4, tessera: 4, tesera: 4,
-    five: 5, pente: 5,
-    six: 6, exi: 6,
+    one: 1, won: 1, ena: 1, ena1: 1,
+    two: 2, to: 2, too: 2, dio: 2, duo: 2, dyo: 2,
+    three: 3, tree: 3, tria: 3,
+    four: 4, for: 4, tessera: 4, tesera: 4,
+    five: 5, vive: 5, pente: 5,
+    six: 6, sex: 6, exi: 6,
     seven: 7, efta: 7, epta: 7,
-    eight: 8, okto: 8,
-    nine: 9, ennia: 9, ennea: 9, enya: 9,
+    eight: 8, ate: 8, okto: 8, oktoh: 8,
+    nine: 9, nein: 9, ennia: 9, ennea: 9, enya: 9,
     ten: 10, deka: 10,
     ενα: 1, ενας: 1, δυο: 2, τρια: 3, τεσσερα: 4, πεντε: 5,
     εξι: 6, επτα: 7, οκτω: 8, εννια: 9, δεκα: 10
@@ -792,6 +811,13 @@ function getNumberFromSpeech(text) {
 
     if (tokenMap[t] !== undefined) {
       return tokenMap[t];
+    }
+  }
+
+  // Fallback: sometimes mobile recognizers return phrases rather than clean tokens.
+  for (const [k, v] of Object.entries(tokenMap)) {
+    if (normalized.includes(` ${k} `) || normalized.startsWith(`${k} `) || normalized.endsWith(` ${k}`) || normalized === k) {
+      return v;
     }
   }
 
@@ -1000,6 +1026,11 @@ if (!SpeechRecognition) {
       const piece = event.results[i] && event.results[i][0] ? event.results[i][0].transcript : "";
       combinedTranscript += `${piece} `;
     }
+    if (!combinedTranscript.trim() && event.results.length) {
+      const last = event.results[event.results.length - 1];
+      const fallbackPiece = last && last[0] ? last[0].transcript : "";
+      combinedTranscript = fallbackPiece;
+    }
     const transcript = combinedTranscript.trim().toLowerCase();
 
     if (!transcript) return;
@@ -1007,6 +1038,7 @@ if (!SpeechRecognition) {
     console.log("HEARD:", transcript);
     console.log("STATE:", gameState);
     transcriptElement.textContent = `You said: ${transcript}`;
+    updateDebugInfo({ heard: transcript, state: gameState, decision: "hearing..." });
 
     const normalizedTranscript = normalizeVoiceTranscript(transcript);
     if (!normalizedTranscript) return;
@@ -1024,6 +1056,7 @@ if (!SpeechRecognition) {
         normalizedTranscript.includes(command)
       );
       if (startMatch) {
+        updateDebugInfo({ decision: "start command matched" });
         startGame();
       }
       return;
@@ -1032,6 +1065,7 @@ if (!SpeechRecognition) {
     if (gameState === "choose_character") {
       const character = getCharacterFromSpeech(transcript);
       if (character) {
+        updateDebugInfo({ decision: `character matched: ${character}` });
         selectCharacter(character);
       }
       return;
@@ -1046,9 +1080,11 @@ if (!SpeechRecognition) {
     // MATH
     if (currentQuestion.type === "math") {
       const spokenNumber = getNumberFromSpeech(transcript);
+      updateDebugInfo({ parsed: spokenNumber === null ? "null" : spokenNumber });
 
       if (spokenNumber === null) {
         if (transcript.replace(/\s+/g, "").length >= 2) {
+          updateDebugInfo({ decision: "math wrong (no number)" });
           answerLocked = true;
           handleWrongAnswer();
         }
@@ -1058,8 +1094,10 @@ if (!SpeechRecognition) {
       answerLocked = true;
 
       if (spokenNumber === currentQuestion.answer) {
+        updateDebugInfo({ decision: "math correct" });
         handleCorrectAnswer();
       } else {
+        updateDebugInfo({ decision: "math wrong" });
         handleWrongAnswer();
       }
 
@@ -1069,8 +1107,10 @@ if (!SpeechRecognition) {
     // NUMBER
     if (currentQuestion.type === "number") {
       const spokenNumber = getNumberFromSpeech(transcript);
+      updateDebugInfo({ parsed: spokenNumber === null ? "null" : spokenNumber });
       if (spokenNumber === null) {
         if (transcript.replace(/\s+/g, "").length >= 2) {
+          updateDebugInfo({ decision: "number wrong (no number)" });
           answerLocked = true;
           handleWrongAnswer();
         }
@@ -1078,8 +1118,10 @@ if (!SpeechRecognition) {
       }
       answerLocked = true;
       if (spokenNumber === currentQuestion.answer) {
+        updateDebugInfo({ decision: "number correct" });
         handleCorrectAnswer();
       } else {
+        updateDebugInfo({ decision: "number wrong" });
         handleWrongAnswer();
       }
       return;
@@ -1093,6 +1135,7 @@ if (!SpeechRecognition) {
         ...(currentQuestion.alt || [])
       ];
       const isCorrect = possibleAnswers.some((a) => isCloseWordMatch(answer, a));
+      updateDebugInfo({ parsed: answer || "-", decision: isCorrect ? "object correct" : "object wrong" });
 
       // Ignore tiny/noisy chunks instead of auto-wrong.
       if (answer.replace(/\s+/g, "").length < 2) return;

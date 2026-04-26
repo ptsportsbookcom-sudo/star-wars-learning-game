@@ -350,6 +350,8 @@ function getRandomInt(min, max) {
 }
 
 function generateQuestion() {
+  answerLocked = false;
+  answerAcceptAt = Date.now() + 1200;
   battleResultElement.textContent = "Ready to fight";
   setCharacterImage(playerImageElement, selectedCharacter, "idle");
   setCharacterImage(enemyImageElement, enemyCharacter, "idle");
@@ -365,7 +367,6 @@ function generateQuestion() {
   }, 250);
 
   gameMode = ["math", "alphabet", "object"][Math.floor(Math.random() * 3)];
-  answerAcceptAt = Date.now() + 2000;
   console.log("MODE:", gameMode);
 
   if (gameMode === "alphabet") {
@@ -673,11 +674,17 @@ if (!SpeechRecognition) {
     }
 
     if (gameState === "answer") {
+      if (!currentQuestion) {
+        return;
+      }
+
       if (Date.now() < answerAcceptAt) {
+        console.log("waiting before accepting answer");
         return;
       }
 
       if (answerLocked) {
+        console.log("already answered");
         return;
       }
 
@@ -730,10 +737,6 @@ if (!SpeechRecognition) {
 
       if (spokenNumber === null) {
         console.log("NO MATCH — ignoring");
-        return;
-      }
-
-      if (!currentQuestion) {
         return;
       }
 

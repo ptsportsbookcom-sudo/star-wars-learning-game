@@ -35,8 +35,6 @@ let nextRoundTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
-let ignoreSpeechUntil = 0;
-let answerAcceptAt = 0;
 let gameMode = "math"; // math | alphabet | object
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
@@ -312,7 +310,6 @@ function handleWrongAnswer() {
 }
 
 function speakMessage(message) {
-  ignoreSpeechUntil = Date.now() + 300;
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
@@ -347,7 +344,6 @@ function getRandomInt(min, max) {
 
 function generateQuestion() {
   answerLocked = false;
-  answerAcceptAt = Date.now() + 1200;
   battleResultElement.textContent = "Ready to fight";
   setCharacterImage(playerImageElement, selectedCharacter, "idle");
   setCharacterImage(enemyImageElement, enemyCharacter, "idle");
@@ -707,11 +703,6 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
-    if (Date.now() < ignoreSpeechUntil) {
-      console.log("IGNORING TTS overlap");
-      return;
-    }
-
     const result = event.results[event.results.length - 1];
     const transcript = result[0].transcript.trim();
     if (!transcript) return;

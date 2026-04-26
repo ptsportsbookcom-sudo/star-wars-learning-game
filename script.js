@@ -312,17 +312,13 @@ function handleWrongAnswer() {
 }
 
 function speakMessage(message) {
-  ignoreSpeechUntil = Date.now() + 900;
+  ignoreSpeechUntil = Date.now() + 300;
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
     const isVillain = VILLAINS.includes(selectedCharacter);
     utterance.rate = isVillain ? 0.82 : 0.85;
     utterance.pitch = isVillain ? 0.7 : 0.8;
-    utterance.onend = () => {
-      // Keep a short extra buffer to avoid capturing tail audio.
-      ignoreSpeechUntil = Date.now() + 200;
-    };
     window.speechSynthesis.speak(utterance);
   }
   statusElement.textContent = message;
@@ -712,6 +708,7 @@ if (!SpeechRecognition) {
 
   recognition.onresult = (event) => {
     if (Date.now() < ignoreSpeechUntil) {
+      console.log("IGNORING TTS overlap");
       return;
     }
 

@@ -591,6 +591,7 @@ if (!SpeechRecognition) {
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
+  let answerDebounceTimer = null;
 
   const allowedCommands = ["start", "ξεκινα"];
   function setWaitingStatus() {
@@ -599,6 +600,91 @@ if (!SpeechRecognition) {
 
   function hideListeningButton() {
     startListeningButton.classList.add("hidden");
+  }
+
+  function isPromptEcho(text) {
+    const t = text.toLowerCase();
+    return (
+      t.includes("what is") ||
+      t.includes("say the letter") ||
+      t.includes("correct") ||
+      t.includes("wrong") ||
+      t.includes("get ready")
+    );
+  }
+
+  function processAnswer(cleanedTranscript) {
+    if (!currentQuestion) return;
+    if (answerLocked) return;
+    if (Date.now() < answerAcceptAt) return;
+
+    console.log("PROCESS ANSWER:", cleanedTranscript);
+    console.log("TYPE:", currentQuestion.type);
+
+    if (isPromptEcho(cleanedTranscript)) {
+      console.log("PROMPT ECHO IGNORED");
+      return;
+    }
+
+    if (currentQuestion.type === "alphabet") {
+      const answer = normalizeGreek(cleanedTranscript);
+      const allAnswers = [
+        ...currentQuestion.answers,
+        ...(currentQuestion.alt || []),
+      ];
+      const isCorrect = allAnswers.some((a) =>
+        answer.includes(normalizeGreek(a))
+      );
+      console.log("MATCH RESULT:", isCorrect);
+
+      if (isCorrect) {
+        answerLocked = true;
+        handleCorrectAnswer();
+        return;
+      }
+
+      if (answer.length >= 2) {
+        answerLocked = true;
+        handleWrongAnswer();
+      }
+      return;
+    }
+
+    if (currentQuestion.type === "object") {
+      const answer = normalizeGreek(cleanedTranscript);
+      const allAnswers = [
+        ...currentQuestion.answers,
+        ...(currentQuestion.alt || []),
+      ];
+      const isCorrect = allAnswers.some((a) =>
+        answer.includes(normalizeGreek(a))
+      );
+      console.log("MATCH RESULT:", isCorrect);
+
+      if (isCorrect) {
+        answerLocked = true;
+        handleCorrectAnswer();
+      }
+      return;
+    }
+
+    const spokenNumber = getNumberFromSpeech(cleanedTranscript);
+    console.log("NUMBER DETECTED:", spokenNumber);
+    console.log("EXPECTED:", currentQuestion?.answer);
+    if (spokenNumber === null) {
+      console.log("NO MATCH — ignoring");
+      console.log("MATCH RESULT:", false);
+      return;
+    }
+
+    const isCorrect = spokenNumber === currentQuestion.answer;
+    console.log("MATCH RESULT:", isCorrect);
+    answerLocked = true;
+    if (isCorrect) {
+      handleCorrectAnswer();
+    } else {
+      handleWrongAnswer();
+    }
   }
 
   function startContinuousVoiceMode() {
@@ -674,78 +760,11 @@ if (!SpeechRecognition) {
     }
 
     if (gameState === "answer") {
-      if (!currentQuestion) {
-        return;
-      }
-
-      if (Date.now() < answerAcceptAt) {
-        console.log("waiting before accepting answer");
-        return;
-      }
-
-      if (answerLocked) {
-        console.log("already answered");
-        return;
-      }
-
-      if (currentQuestion && currentQuestion.type === "alphabet") {
-        console.log("ALPHABET HEARD:", cleanedFinalTranscript);
-        console.log("VALID ANSWERS:", currentQuestion?.answers);
-        const answer = normalizeGreek(cleanedTranscript);
-        const allAnswers = [
-          ...currentQuestion.answers,
-          ...(currentQuestion.alt || []),
-        ];
-        const isCorrect = allAnswers.some((a) =>
-          answer.includes(normalizeGreek(a))
-        );
-
-        answerLocked = true;
-        if (isCorrect) {
-          handleCorrectAnswer();
-        } else {
-          handleWrongAnswer();
-        }
-        return;
-      }
-
-      if (currentQuestion && currentQuestion.type === "object") {
-        console.log("OBJECT HEARD:", cleanedFinalTranscript);
-        console.log("VALID ANSWERS:", currentQuestion?.answers);
-        const answer = normalizeGreek(cleanedTranscript);
-        const allAnswers = [
-          ...currentQuestion.answers,
-          ...(currentQuestion.alt || []),
-        ];
-        const isCorrect = allAnswers.some((a) =>
-          answer.includes(normalizeGreek(a))
-        );
-
-        answerLocked = true;
-        if (isCorrect) {
-          handleCorrectAnswer();
-        } else {
-          handleWrongAnswer();
-        }
-
-        return;
-      }
-
-      const spokenNumber = getNumberFromSpeech(cleanedTranscript);
-      console.log("NUMBER DETECTED:", spokenNumber);
-      console.log("EXPECTED:", currentQuestion?.answer);
-
-      if (spokenNumber === null) {
-        console.log("NO MATCH — ignoring");
-        return;
-      }
-
-      answerLocked = true;
-      if (spokenNumber === currentQuestion.answer) {
-        handleCorrectAnswer();
-      } else {
-        handleWrongAnswer();
-      }
+      clearTimeout(answerDebounceTimer);
+      answerDebounceTimer = setTimeout(() => {
+        processAnswer(cleanedTranscript);
+      }, 700);
+      return;
     }
   };
 

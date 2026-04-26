@@ -11,6 +11,7 @@ body {
   display: grid;
   place-items: center;
   transition: background-color 0.35s ease, box-shadow 0.35s ease;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -23,6 +24,18 @@ body::before {
   background-position: 0 0, 30px 30px;
   opacity: 0.05;
   pointer-events: none;
+  animation: starsDrift 16s linear infinite;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 230, 120, 0.12), transparent 35%),
+    radial-gradient(circle at 80% 30%, rgba(90, 180, 255, 0.12), transparent 32%),
+    radial-gradient(circle at 50% 80%, rgba(255, 90, 180, 0.08), transparent 38%);
+  animation: pulseGlow 5s ease-in-out infinite;
 }
 
 body.theme-space {
@@ -208,7 +221,7 @@ body.state-lose {
   border-radius: 0.75rem;
   padding: 1.25rem;
   text-align: center;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.12);
   width: 100%;
   max-width: 760px;
 }
@@ -361,7 +374,7 @@ body.flash-lose {
 }
 
 #questionDisplay {
-  font-size: 2.8rem;
+  font-size: clamp(2.2rem, 7vw, 3.2rem);
   text-align: center;
   font-weight: 800;
   line-height: 1.2;
@@ -369,7 +382,7 @@ body.flash-lose {
   padding: 0.8rem 0;
   margin-top: 10px;
   margin-bottom: 0.55rem;
-  text-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.28), 0 0 30px rgba(254, 218, 74, 0.3);
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
@@ -465,6 +478,11 @@ body.flash-lose {
 
 .result-popup.show {
   animation: popupBlast 1.2s ease forwards;
+}
+
+#battleResult {
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
 }
 
 .question-area {
@@ -566,5 +584,23 @@ body.flash-lose {
   100% {
     opacity: 0;
     transform: translateX(-50%) scale(0.9);
+  }
+}
+
+@keyframes starsDrift {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(60px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
   }
 }

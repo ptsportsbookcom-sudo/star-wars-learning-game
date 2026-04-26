@@ -39,7 +39,7 @@ let resultPopupTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
-let gameMode = "math"; // math | alphabet | object
+let gameMode = "math"; // math | number | object
 let playerScore = 0;
 let enemyScore = 0;
 const TARGET_SCORE = 15;
@@ -538,8 +538,9 @@ function generateQuestion() {
   clearAnswerStuckTimer();
   answerLocked = false;
   battleResultElement.textContent = "Ready to fight";
-  setCharacterImage(playerImageElement, selectedCharacter, "idle");
-  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+  // Answer phase stance: both characters are ready to attack.
+  setCharacterImage(playerImageElement, selectedCharacter, "attack");
+  setCharacterImage(enemyImageElement, enemyCharacter, "attack");
   document.body.classList.remove("flash-win", "flash-lose");
   questionDisplayElement.style.transform = "scale(0.7)";
   questionDisplayElement.style.opacity = "0";
@@ -551,28 +552,24 @@ function generateQuestion() {
     questionDisplayElement.style.transform = "scale(1)";
   }, 250);
 
-  gameMode = ["math", "alphabet", "object"][Math.floor(Math.random() * 3)];
+  gameMode = ["math", "number", "object"][Math.floor(Math.random() * 3)];
   console.log("MODE:", gameMode);
 
-  if (gameMode === "alphabet") {
-    const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-
+  if (gameMode === "number") {
+    const numberValue = getRandomInt(1, 10);
     currentQuestion = {
-      type: "alphabet",
-      answers: getLetterAnswers(letter),
+      type: "number",
+      answer: numberValue,
     };
-
     answerLocked = false;
-    questionDisplayElement.textContent = `Say this letter: ${letter.en} (${letter.el})`;
+    questionDisplayElement.textContent = `Say this number: ${numberValue}`;
     battleResultElement.textContent = "Ready to fight";
     setRandomBackground();
     setQuestionBackground();
-
     if (questionImageElement) {
       questionImageElement.classList.add("hidden");
     }
-
-    speakMessage("Say the letter");
+    speakMessage(`Say number ${numberValue}`);
     setGameState("answer");
     scheduleAnswerStuckTimer();
     return;
@@ -1011,20 +1008,16 @@ if (!SpeechRecognition) {
       return;
     }
 
-    // ALPHABET
-    if (currentQuestion.type === "alphabet") {
-      const answer = normalizeGreek(transcript);
-      const allAnswers = currentQuestion.answers.map((a) => normalizeGreek(a));
-      const isCorrect = allAnswers.some((a) => answer.includes(a));
-
-      // Ignore tiny/noisy chunks instead of auto-wrong.
-      if (answer.replace(/\s+/g, "").length < 2) return;
-
-      if (!isCorrect) return;
-
+    // NUMBER
+    if (currentQuestion.type === "number") {
+      const spokenNumber = getNumberFromSpeech(transcript);
+      if (spokenNumber === null) return;
       answerLocked = true;
-      handleCorrectAnswer();
-
+      if (spokenNumber === currentQuestion.answer) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
+      }
       return;
     }
 
@@ -1040,10 +1033,12 @@ if (!SpeechRecognition) {
       // Ignore tiny/noisy chunks instead of auto-wrong.
       if (answer.replace(/\s+/g, "").length < 2) return;
 
-      if (!isCorrect) return;
-
       answerLocked = true;
-      handleCorrectAnswer();
+      if (isCorrect) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
+      }
 
       return;
     }

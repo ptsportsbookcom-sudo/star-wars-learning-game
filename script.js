@@ -20,6 +20,7 @@ const questionImageElement = document.getElementById("questionImage");
 const battleResultElement = document.getElementById("battleResult");
 const impactTextElement = document.getElementById("impactText");
 const resultPopupElement = document.getElementById("resultPopup");
+const streakDisplayElement = document.getElementById("streakDisplay");
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
@@ -39,6 +40,8 @@ let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
 let gameMode = "math"; // math | alphabet | object
+let playerScore = 0;
+const TARGET_SCORE = 15;
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -69,30 +72,30 @@ const LETTERS = [
   { en: "X", el: "ω" },
 ];
 const LETTER_ALIASES = {
-  A: ["αλφα", "alfa", "alpha"],
-  B: ["βητα", "βίτα", "vita", "beta"],
-  C: ["γαμα", "γάμα", "gama", "gamma"],
-  D: ["δελτα", "δέλτα", "delta"],
-  E: ["εψιλον", "έψιλον", "epsilon", "epsilo"],
-  F: ["ζητα", "ζήτα", "zita", "zeta"],
-  G: ["ητα", "ήτα", "ita", "eta"],
-  H: ["θητα", "θήτα", "thita", "theta"],
-  I: ["ιωτα", "ιώτα", "iota"],
-  J: ["καπα", "κάπα", "kapa", "kappa"],
-  K: ["λαμδα", "λάμδα", "lamda", "lambda"],
-  L: ["μι", "my", "mu"],
-  M: ["νι", "ny", "ni", "nu"],
-  N: ["ξι", "ksi", "xi"],
-  O: ["ομικρον", "όμικρον", "omikron", "omicron"],
-  P: ["πι", "pi"],
-  Q: ["ρω", "ro", "rho"],
-  R: ["σιγμα", "σίγμα", "sigma"],
-  S: ["ταυ", "tav", "taf", "tau"],
-  T: ["υψιλον", "ύψιλον", "ipsilon", "ypsilon", "upsilon"],
-  U: ["φι", "fi", "phi"],
-  V: ["χι", "chi", "xi"],
-  W: ["psi", "ψι"],
-  X: ["ωμεγα", "ωμέγα", "omega"],
+  A: ["a", "ay", "αλφα", "alfa", "alpha"],
+  B: ["b", "bee", "μπι", "βητα", "βίτα", "vita", "beta"],
+  C: ["c", "see", "σι", "γαμα", "γάμα", "gama", "gamma"],
+  D: ["d", "dee", "ντι", "δελτα", "δέλτα", "delta"],
+  E: ["e", "ee", "ι", "εψιλον", "έψιλον", "epsilon", "epsilo"],
+  F: ["f", "ef", "εφ", "ζητα", "ζήτα", "zita", "zeta"],
+  G: ["g", "gee", "τζι", "ητα", "ήτα", "ita", "eta"],
+  H: ["h", "eitch", "ειτς", "θητα", "θήτα", "thita", "theta"],
+  I: ["i", "ai", "ιωτα", "ιώτα", "iota"],
+  J: ["j", "jay", "τζει", "καπα", "κάπα", "kapa", "kappa"],
+  K: ["k", "kay", "κει", "λαμδα", "λάμδα", "lamda", "lambda"],
+  L: ["l", "el", "ελ", "μι", "my", "mu"],
+  M: ["m", "em", "εμ", "νι", "ny", "ni", "nu"],
+  N: ["n", "en", "εν", "ξι", "ksi", "xi"],
+  O: ["o", "oh", "ομικρον", "όμικρον", "omikron", "omicron"],
+  P: ["p", "pee", "πι", "pi"],
+  Q: ["q", "cue", "κιου", "ρω", "ro", "rho"],
+  R: ["r", "ar", "αρ", "σιγμα", "σίγμα", "sigma"],
+  S: ["s", "ess", "ες", "ταυ", "tav", "taf", "tau"],
+  T: ["t", "tee", "τι", "υψιλον", "ύψιλον", "ipsilon", "ypsilon", "upsilon"],
+  U: ["u", "you", "γιου", "φι", "fi", "phi"],
+  V: ["v", "vee", "βι", "χι", "chi", "xi"],
+  W: ["w", "double u", "doubleyou", "ψι", "psi"],
+  X: ["x", "eks", "ωμεγα", "ωμέγα", "omega"],
 };
 const ALPHABET_IMAGES = [
   "Images/Luke.png",
@@ -101,26 +104,26 @@ const ALPHABET_IMAGES = [
   "Images/r2d2.png",
 ];
 const OBJECTS = [
-  { name: "apple", el: "μηλο", alt: ["milo"], img: createEmojiObjectImage("🍎", "ΜΗΛΟ", "#c73a3a") },
-  { name: "dog", el: "σκυλος", alt: ["skilos", "skylos"], img: createEmojiObjectImage("🐶", "ΣΚΥΛΟΣ", "#37517a") },
-  { name: "cat", el: "γατα", alt: ["gata"], img: createEmojiObjectImage("🐱", "ΓΑΤΑ", "#684d3c") },
-  { name: "car", el: "αυτοκινητο", alt: ["aftokinito"], img: createEmojiObjectImage("🚗", "ΑΥΤΟΚΙΝΗΤΟ", "#2f4858") },
-  { name: "banana", el: "μπανανα", alt: ["banana"], img: createEmojiObjectImage("🍌", "ΜΠΑΝΑΝΑ", "#8a7400") },
-  { name: "house", el: "σπιτι", alt: ["spiti"], img: createEmojiObjectImage("🏠", "ΣΠΙΤΙ", "#324a67") },
-  { name: "tree", el: "δεντρο", alt: ["dentro"], img: createEmojiObjectImage("🌳", "ΔΕΝΤΡΟ", "#345e3a") },
-  { name: "phone", el: "τηλεφωνο", alt: ["tilefono"], img: createEmojiObjectImage("📱", "ΤΗΛΕΦΩΝΟ", "#394150") },
-  { name: "book", el: "βιβλιο", alt: ["vivlio"], img: createEmojiObjectImage("📘", "ΒΙΒΛΙΟ", "#214166") },
-  { name: "chair", el: "καρεκλα", alt: ["karekla"], img: createEmojiObjectImage("🪑", "ΚΑΡΕΚΛΑ", "#574334") },
-  { name: "table", el: "τραπεζι", alt: ["trapezi"], img: createEmojiObjectImage("🟫", "ΤΡΑΠΕΖΙ", "#4d3d31") },
-  { name: "bike", el: "ποδηλατο", alt: ["podilato"], img: createEmojiObjectImage("🚲", "ΠΟΔΗΛΑΤΟ", "#2d4e6f") },
-  { name: "bus", el: "λεωφορειο", alt: ["leoforeio"], img: createEmojiObjectImage("🚌", "ΛΕΩΦΟΡΕΙΟ", "#654017") },
-  { name: "train", el: "τρενο", alt: ["treno"], img: createEmojiObjectImage("🚆", "ΤΡΕΝΟ", "#4a2f57") },
-  { name: "plane", el: "αεροπλανο", alt: ["aeroplano"], img: createEmojiObjectImage("✈️", "ΑΕΡΟΠΛΑΝΟ", "#2b4f68") },
-  { name: "boat", el: "βαρκα", alt: ["varka"], img: createEmojiObjectImage("⛵", "ΒΑΡΚΑ", "#27506f") },
-  { name: "fish", el: "ψαρι", alt: ["psari"], img: createEmojiObjectImage("🐟", "ΨΑΡΙ", "#215568") },
-  { name: "bird", el: "πουλι", alt: ["pouli"], img: createEmojiObjectImage("🐦", "ΠΟΥΛΙ", "#345578") },
-  { name: "cow", el: "αγελαδα", alt: ["agelada"], img: createEmojiObjectImage("🐄", "ΑΓΕΛΑΔΑ", "#4f4f4f") },
-  { name: "horse", el: "αλογο", alt: ["alogo"], img: createEmojiObjectImage("🐴", "ΑΛΟΓΟ", "#5d3f30") }
+  { name: "apple", el: "μηλο", alt: ["milo"], img: createEmojiObjectImage("🍎", "#c73a3a") },
+  { name: "dog", el: "σκυλος", alt: ["skilos", "skylos"], img: createEmojiObjectImage("🐶", "#37517a") },
+  { name: "cat", el: "γατα", alt: ["gata"], img: createEmojiObjectImage("🐱", "#684d3c") },
+  { name: "car", el: "αυτοκινητο", alt: ["aftokinito"], img: createEmojiObjectImage("🚗", "#2f4858") },
+  { name: "banana", el: "μπανανα", alt: ["banana"], img: createEmojiObjectImage("🍌", "#8a7400") },
+  { name: "house", el: "σπιτι", alt: ["spiti"], img: createEmojiObjectImage("🏠", "#324a67") },
+  { name: "tree", el: "δεντρο", alt: ["dentro"], img: createEmojiObjectImage("🌳", "#345e3a") },
+  { name: "phone", el: "τηλεφωνο", alt: ["tilefono"], img: createEmojiObjectImage("📱", "#394150") },
+  { name: "book", el: "βιβλιο", alt: ["vivlio"], img: createEmojiObjectImage("📘", "#214166") },
+  { name: "chair", el: "καρεκλα", alt: ["karekla"], img: createEmojiObjectImage("🪑", "#574334") },
+  { name: "table", el: "τραπεζι", alt: ["trapezi"], img: createEmojiObjectImage("🪵", "#4d3d31") },
+  { name: "bike", el: "ποδηλατο", alt: ["podilato"], img: createEmojiObjectImage("🚲", "#2d4e6f") },
+  { name: "bus", el: "λεωφορειο", alt: ["leoforeio"], img: createEmojiObjectImage("🚌", "#654017") },
+  { name: "train", el: "τρενο", alt: ["treno"], img: createEmojiObjectImage("🚆", "#4a2f57") },
+  { name: "plane", el: "αεροπλανο", alt: ["aeroplano"], img: createEmojiObjectImage("✈️", "#2b4f68") },
+  { name: "boat", el: "βαρκα", alt: ["varka"], img: createEmojiObjectImage("⛵", "#27506f") },
+  { name: "fish", el: "ψαρι", alt: ["psari"], img: createEmojiObjectImage("🐟", "#215568") },
+  { name: "bird", el: "πουλι", alt: ["pouli"], img: createEmojiObjectImage("🐦", "#345578") },
+  { name: "cow", el: "αγελαδα", alt: ["agelada"], img: createEmojiObjectImage("🐄", "#4f4f4f") },
+  { name: "horse", el: "αλογο", alt: ["alogo"], img: createEmojiObjectImage("🐴", "#5d3f30") }
 ];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": {
@@ -278,6 +281,77 @@ function showResultPopup(message, type) {
   }, 1400);
 }
 
+function updateStreakDisplay() {
+  if (!streakDisplayElement) return;
+  streakDisplayElement.textContent = `Score ${playerScore > 0 ? "+" : ""}${playerScore} / ${TARGET_SCORE}`;
+}
+
+function playOutcomeSound(kind) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  const ctx = new AudioCtx();
+  const notes =
+    kind === "win"
+      ? [740, 880, 988]
+      : [330, 262, 196];
+  notes.forEach((freq, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = kind === "win" ? "triangle" : "sawtooth";
+    osc.frequency.value = freq;
+    gain.gain.value = 0.0001;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const startAt = ctx.currentTime + idx * 0.12;
+    const endAt = startAt + 0.16;
+    gain.gain.exponentialRampToValueAtTime(0.08, startAt + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+    osc.start(startAt);
+    osc.stop(endAt);
+  });
+}
+
+function handleScoreProgress(isCorrectAnswer) {
+  playerScore += isCorrectAnswer ? 1 : -1;
+  updateStreakDisplay();
+}
+
+function getMatchWinImage(character) {
+  return HEROES.includes(character)
+    ? "Images/good guy wins final.png"
+    : "Images/bad guy wins.png";
+}
+
+function showMatchOutcomeIcon(winnerCharacter, loserCharacter, winnerOnPlayerSide) {
+  const winnerImage = winnerOnPlayerSide ? playerImageElement : enemyImageElement;
+  const loserImage = winnerOnPlayerSide ? enemyImageElement : playerImageElement;
+  winnerImage.src = getMatchWinImage(winnerCharacter);
+  winnerImage.alt = `${winnerCharacter} wins`;
+  winnerImage.classList.remove("attack", "lose", "idle");
+  winnerImage.classList.add("attack");
+  setCharacterImage(loserImage, loserCharacter, "lose");
+}
+
+function handleScoreFinishIfNeeded() {
+  if (playerScore >= TARGET_SCORE) {
+    setGameState("idle");
+    showResultPopup("YOU WON THE MATCH!", "win");
+    speakMessage("Amazing! You won the match!");
+    statusElement.textContent = "Match complete. Say start for a new game.";
+    showMatchOutcomeIcon(selectedCharacter, enemyCharacter, true);
+    return true;
+  }
+  if (playerScore <= -TARGET_SCORE) {
+    setGameState("idle");
+    showResultPopup("ENEMY WON THE MATCH!", "lose");
+    speakMessage("The enemy won this match. Say start to play again.");
+    statusElement.textContent = "Match complete. Say start for a new game.";
+    showMatchOutcomeIcon(enemyCharacter, selectedCharacter, false);
+    return true;
+  }
+  return false;
+}
+
 function clearAnswerStuckTimer() {
   if (answerStuckTimeout) {
     clearTimeout(answerStuckTimeout);
@@ -320,21 +394,18 @@ function resolveBattleRound(isCorrectAnswer) {
 
 function handleCorrectAnswer() {
   clearAnswerStuckTimer();
+  handleScoreProgress(true);
   resolveBattleRound(true);
   setGameState("result");
   showResultPopup("CORRECT!", "win");
+  playOutcomeSound("win");
   document.body.classList.add("flash-win");
   setTimeout(() => {
     document.body.classList.remove("flash-win");
   }, 200);
 
-  // SHOW WINNER MOMENT
-  playerImageElement.src = HEROES.includes(selectedCharacter)
-    ? "Images/good guy wins final.png"
-    : "Images/bad guy wins.png";
-  playerImageElement.alt = `${selectedCharacter} wins`;
-  playerImageElement.classList.remove("attack", "lose", "idle");
-  playerImageElement.classList.add("attack");
+  // SHOW ATTACK VS LOSE
+  setCharacterImage(playerImageElement, selectedCharacter, "attack");
   setCharacterImage(enemyImageElement, enemyCharacter, "lose");
 
   speakMessage("Correct!");
@@ -342,6 +413,9 @@ function handleCorrectAnswer() {
   // WAIT 5 SECONDS BEFORE NEXT QUESTION
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
+  }
+  if (handleScoreFinishIfNeeded()) {
+    return;
   }
   nextRoundTimeout = setTimeout(() => {
     setCharacterImage(playerImageElement, selectedCharacter, "idle");
@@ -354,27 +428,27 @@ function handleCorrectAnswer() {
 
 function handleWrongAnswer() {
   clearAnswerStuckTimer();
+  handleScoreProgress(false);
   resolveBattleRound(false);
   setGameState("result");
   showResultPopup("TRY AGAIN!", "lose");
+  playOutcomeSound("lose");
   document.body.classList.add("flash-lose");
   setTimeout(() => {
     document.body.classList.remove("flash-lose");
   }, 200);
 
-  // ENEMY WINNER MOMENT
+  // ENEMY ATTACK
   setCharacterImage(playerImageElement, selectedCharacter, "lose");
-  enemyImageElement.src = HEROES.includes(enemyCharacter)
-    ? "Images/good guy wins final.png"
-    : "Images/bad guy wins.png";
-  enemyImageElement.alt = `${enemyCharacter} wins`;
-  enemyImageElement.classList.remove("attack", "lose", "idle");
-  enemyImageElement.classList.add("attack");
+  setCharacterImage(enemyImageElement, enemyCharacter, "attack");
 
   speakMessage("Wrong!");
 
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
+  }
+  if (handleScoreFinishIfNeeded()) {
+    return;
   }
   nextRoundTimeout = setTimeout(() => {
     setCharacterImage(playerImageElement, selectedCharacter, "idle");
@@ -433,12 +507,15 @@ function getRandomInt(min, max) {
 
 function getLetterAnswers(letter) {
   const aliases = LETTER_ALIASES[letter.en] || [];
-  return [letter.el.toLowerCase(), ...aliases.map((a) => a.toLowerCase())];
+  return [
+    letter.en.toLowerCase(),
+    letter.el.toLowerCase(),
+    ...aliases.map((a) => a.toLowerCase()),
+  ];
 }
 
-function createEmojiObjectImage(emoji, label, color) {
+function createEmojiObjectImage(emoji, color) {
   const safeEmoji = String(emoji).replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  const safeLabel = String(label).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420">
     <defs>
       <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -447,8 +524,7 @@ function createEmojiObjectImage(emoji, label, color) {
       </linearGradient>
     </defs>
     <rect width="420" height="420" rx="36" fill="url(#bg)"/>
-    <text x="210" y="205" text-anchor="middle" font-size="170">${safeEmoji}</text>
-    <text x="210" y="365" text-anchor="middle" fill="#ffffff" font-size="42" font-weight="700" font-family="Segoe UI, Arial">${safeLabel}</text>
+    <text x="210" y="238" text-anchor="middle" font-size="195">${safeEmoji}</text>
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
@@ -502,7 +578,7 @@ function generateQuestion() {
 
     currentQuestion = {
       type: "object",
-      answers: [obj.el.toLowerCase()],
+      answers: [obj.name.toLowerCase(), obj.el.toLowerCase()],
       alt: obj.alt || [],
     };
 
@@ -700,6 +776,8 @@ function startGame() {
   currentQuestion = null;
   lastQuestion = "";
   answerLocked = false;
+  playerScore = 0;
+  updateStreakDisplay();
   clearAnswerStuckTimer();
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);

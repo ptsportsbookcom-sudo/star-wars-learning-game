@@ -19,6 +19,7 @@ const questionDisplayElement = document.getElementById("questionDisplay");
 const questionImageElement = document.getElementById("questionImage");
 const battleResultElement = document.getElementById("battleResult");
 const impactTextElement = document.getElementById("impactText");
+const resultPopupElement = document.getElementById("resultPopup");
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
@@ -32,6 +33,8 @@ let restartPending = false;
 let musicEnabled = true;
 let currentQuestion = null;
 let nextRoundTimeout = null;
+let answerStuckTimeout = null;
+let resultPopupTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
@@ -65,6 +68,32 @@ const LETTERS = [
   { en: "W", el: "ψ" },
   { en: "X", el: "ω" },
 ];
+const LETTER_ALIASES = {
+  A: ["αλφα", "alfa", "alpha"],
+  B: ["βητα", "βίτα", "vita", "beta"],
+  C: ["γαμα", "γάμα", "gama", "gamma"],
+  D: ["δελτα", "δέλτα", "delta"],
+  E: ["εψιλον", "έψιλον", "epsilon", "epsilo"],
+  F: ["ζητα", "ζήτα", "zita", "zeta"],
+  G: ["ητα", "ήτα", "ita", "eta"],
+  H: ["θητα", "θήτα", "thita", "theta"],
+  I: ["ιωτα", "ιώτα", "iota"],
+  J: ["καπα", "κάπα", "kapa", "kappa"],
+  K: ["λαμδα", "λάμδα", "lamda", "lambda"],
+  L: ["μι", "my", "mu"],
+  M: ["νι", "ny", "ni", "nu"],
+  N: ["ξι", "ksi", "xi"],
+  O: ["ομικρον", "όμικρον", "omikron", "omicron"],
+  P: ["πι", "pi"],
+  Q: ["ρω", "ro", "rho"],
+  R: ["σιγμα", "σίγμα", "sigma"],
+  S: ["ταυ", "tav", "taf", "tau"],
+  T: ["υψιλον", "ύψιλον", "ipsilon", "ypsilon", "upsilon"],
+  U: ["φι", "fi", "phi"],
+  V: ["χι", "chi", "xi"],
+  W: ["psi", "ψι"],
+  X: ["ωμεγα", "ωμέγα", "omega"],
+};
 const ALPHABET_IMAGES = [
   "Images/Luke.png",
   "Images/Darth.png",
@@ -72,26 +101,26 @@ const ALPHABET_IMAGES = [
   "Images/r2d2.png",
 ];
 const OBJECTS = [
-  { name: "apple", el: "μηλο", alt: ["milo"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "dog", el: "σκυλος", alt: ["skilos", "skylos"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "cat", el: "γατα", alt: ["gata"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "car", el: "αυτοκινητο", alt: ["aftokinito"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "banana", el: "μπανανα", alt: ["banana"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "house", el: "σπιτι", alt: ["spiti"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "tree", el: "δεντρο", alt: ["dentro"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "phone", el: "τηλεφωνο", alt: ["tilefono"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "book", el: "βιβλιο", alt: ["vivlio"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "chair", el: "καρεκλα", alt: ["karekla"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "table", el: "τραπεζι", alt: ["trapezi"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "bike", el: "ποδηλατο", alt: ["podilato"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "bus", el: "λεωφορειο", alt: ["leoforeio"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "train", el: "τρενο", alt: ["treno"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "plane", el: "αεροπλανο", alt: ["aeroplano"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "boat", el: "βαρκα", alt: ["varka"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "fish", el: "ψαρι", alt: ["psari"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "bird", el: "πουλι", alt: ["pouli"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "cow", el: "αγελαδα", alt: ["agelada"], img: "https://picsum.photos/300?random=" + Math.random() },
-  { name: "horse", el: "αλογο", alt: ["alogo"], img: "https://picsum.photos/300?random=" + Math.random() }
+  { name: "apple", el: "μηλο", alt: ["milo"], img: createEmojiObjectImage("🍎", "ΜΗΛΟ", "#c73a3a") },
+  { name: "dog", el: "σκυλος", alt: ["skilos", "skylos"], img: createEmojiObjectImage("🐶", "ΣΚΥΛΟΣ", "#37517a") },
+  { name: "cat", el: "γατα", alt: ["gata"], img: createEmojiObjectImage("🐱", "ΓΑΤΑ", "#684d3c") },
+  { name: "car", el: "αυτοκινητο", alt: ["aftokinito"], img: createEmojiObjectImage("🚗", "ΑΥΤΟΚΙΝΗΤΟ", "#2f4858") },
+  { name: "banana", el: "μπανανα", alt: ["banana"], img: createEmojiObjectImage("🍌", "ΜΠΑΝΑΝΑ", "#8a7400") },
+  { name: "house", el: "σπιτι", alt: ["spiti"], img: createEmojiObjectImage("🏠", "ΣΠΙΤΙ", "#324a67") },
+  { name: "tree", el: "δεντρο", alt: ["dentro"], img: createEmojiObjectImage("🌳", "ΔΕΝΤΡΟ", "#345e3a") },
+  { name: "phone", el: "τηλεφωνο", alt: ["tilefono"], img: createEmojiObjectImage("📱", "ΤΗΛΕΦΩΝΟ", "#394150") },
+  { name: "book", el: "βιβλιο", alt: ["vivlio"], img: createEmojiObjectImage("📘", "ΒΙΒΛΙΟ", "#214166") },
+  { name: "chair", el: "καρεκλα", alt: ["karekla"], img: createEmojiObjectImage("🪑", "ΚΑΡΕΚΛΑ", "#574334") },
+  { name: "table", el: "τραπεζι", alt: ["trapezi"], img: createEmojiObjectImage("🟫", "ΤΡΑΠΕΖΙ", "#4d3d31") },
+  { name: "bike", el: "ποδηλατο", alt: ["podilato"], img: createEmojiObjectImage("🚲", "ΠΟΔΗΛΑΤΟ", "#2d4e6f") },
+  { name: "bus", el: "λεωφορειο", alt: ["leoforeio"], img: createEmojiObjectImage("🚌", "ΛΕΩΦΟΡΕΙΟ", "#654017") },
+  { name: "train", el: "τρενο", alt: ["treno"], img: createEmojiObjectImage("🚆", "ΤΡΕΝΟ", "#4a2f57") },
+  { name: "plane", el: "αεροπλανο", alt: ["aeroplano"], img: createEmojiObjectImage("✈️", "ΑΕΡΟΠΛΑΝΟ", "#2b4f68") },
+  { name: "boat", el: "βαρκα", alt: ["varka"], img: createEmojiObjectImage("⛵", "ΒΑΡΚΑ", "#27506f") },
+  { name: "fish", el: "ψαρι", alt: ["psari"], img: createEmojiObjectImage("🐟", "ΨΑΡΙ", "#215568") },
+  { name: "bird", el: "πουλι", alt: ["pouli"], img: createEmojiObjectImage("🐦", "ΠΟΥΛΙ", "#345578") },
+  { name: "cow", el: "αγελαδα", alt: ["agelada"], img: createEmojiObjectImage("🐄", "ΑΓΕΛΑΔΑ", "#4f4f4f") },
+  { name: "horse", el: "αλογο", alt: ["alogo"], img: createEmojiObjectImage("🐴", "ΑΛΟΓΟ", "#5d3f30") }
 ];
 const CHARACTER_IMAGES = {
   "Luke Skywalker": {
@@ -231,6 +260,41 @@ function applyOutcomeOverlay(outcomeClass) {
   }
 }
 
+function showResultPopup(message, type) {
+  if (!resultPopupElement) return;
+  if (resultPopupTimeout) {
+    clearTimeout(resultPopupTimeout);
+  }
+  resultPopupElement.textContent = message;
+  resultPopupElement.classList.remove("hidden", "win", "lose", "show");
+  resultPopupElement.classList.add(type);
+  // Force reflow so repeated popups still animate.
+  void resultPopupElement.offsetWidth;
+  resultPopupElement.classList.add("show");
+  resultPopupTimeout = setTimeout(() => {
+    resultPopupElement.classList.remove("show", "win", "lose");
+    resultPopupElement.classList.add("hidden");
+    resultPopupTimeout = null;
+  }, 1400);
+}
+
+function clearAnswerStuckTimer() {
+  if (answerStuckTimeout) {
+    clearTimeout(answerStuckTimeout);
+    answerStuckTimeout = null;
+  }
+}
+
+function scheduleAnswerStuckTimer() {
+  clearAnswerStuckTimer();
+  answerStuckTimeout = setTimeout(() => {
+    if (gameState !== "answer" || answerLocked) return;
+    statusElement.textContent = "Tip: say the answer, or say 'next'.";
+    speakMessage("Say the answer or say next.");
+    forceNextQuestion();
+  }, 12000);
+}
+
 function setQuestionBackground() {
   const themes = ["theme-desert", "theme-space", "theme-electric", "theme-night"];
   const randomTheme = themes[getRandomInt(0, themes.length - 1)];
@@ -255,8 +319,10 @@ function resolveBattleRound(isCorrectAnswer) {
 }
 
 function handleCorrectAnswer() {
+  clearAnswerStuckTimer();
   resolveBattleRound(true);
   setGameState("result");
+  showResultPopup("CORRECT!", "win");
   document.body.classList.add("flash-win");
   setTimeout(() => {
     document.body.classList.remove("flash-win");
@@ -287,8 +353,10 @@ function handleCorrectAnswer() {
 }
 
 function handleWrongAnswer() {
+  clearAnswerStuckTimer();
   resolveBattleRound(false);
   setGameState("result");
+  showResultPopup("TRY AGAIN!", "lose");
   document.body.classList.add("flash-lose");
   setTimeout(() => {
     document.body.classList.remove("flash-lose");
@@ -346,11 +414,47 @@ function setCharacterImage(imgElement, characterName, state = "idle") {
   imgElement.alt = characterName;
 }
 
+function forceNextQuestion() {
+  if (!selectedCharacter || !enemyCharacter) return;
+  clearAnswerStuckTimer();
+  if (nextRoundTimeout) {
+    clearTimeout(nextRoundTimeout);
+    nextRoundTimeout = null;
+  }
+  answerLocked = false;
+  setCharacterImage(playerImageElement, selectedCharacter, "idle");
+  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+  generateQuestion();
+}
+
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function getLetterAnswers(letter) {
+  const aliases = LETTER_ALIASES[letter.en] || [];
+  return [letter.el.toLowerCase(), ...aliases.map((a) => a.toLowerCase())];
+}
+
+function createEmojiObjectImage(emoji, label, color) {
+  const safeEmoji = String(emoji).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const safeLabel = String(label).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${color}"/>
+        <stop offset="100%" stop-color="#111827"/>
+      </linearGradient>
+    </defs>
+    <rect width="420" height="420" rx="36" fill="url(#bg)"/>
+    <text x="210" y="205" text-anchor="middle" font-size="170">${safeEmoji}</text>
+    <text x="210" y="365" text-anchor="middle" fill="#ffffff" font-size="42" font-weight="700" font-family="Segoe UI, Arial">${safeLabel}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 function generateQuestion() {
+  clearAnswerStuckTimer();
   answerLocked = false;
   battleResultElement.textContent = "Ready to fight";
   setCharacterImage(playerImageElement, selectedCharacter, "idle");
@@ -374,7 +478,7 @@ function generateQuestion() {
 
     currentQuestion = {
       type: "alphabet",
-      answers: [letter.en.toLowerCase(), letter.el.toLowerCase()],
+      answers: getLetterAnswers(letter),
     };
 
     answerLocked = false;
@@ -389,6 +493,7 @@ function generateQuestion() {
 
     speakMessage("Say the letter");
     setGameState("answer");
+    scheduleAnswerStuckTimer();
     return;
   }
 
@@ -397,7 +502,7 @@ function generateQuestion() {
 
     currentQuestion = {
       type: "object",
-      answers: [obj.name.toLowerCase(), obj.el.toLowerCase()],
+      answers: [obj.el.toLowerCase()],
       alt: obj.alt || [],
     };
 
@@ -415,6 +520,7 @@ function generateQuestion() {
 
     speakMessage("What is this?");
     setGameState("answer");
+    scheduleAnswerStuckTimer();
     return;
   }
 
@@ -445,6 +551,7 @@ function generateQuestion() {
   setQuestionBackground();
   setGameState("answer");
   speakMessage(`What is ${a} plus ${b}?`);
+  scheduleAnswerStuckTimer();
   console.log("NEW QUESTION:", a, b, "=", currentQuestion.answer);
 }
 
@@ -593,6 +700,7 @@ function startGame() {
   currentQuestion = null;
   lastQuestion = "";
   answerLocked = false;
+  clearAnswerStuckTimer();
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
     nextRoundTimeout = null;
@@ -645,15 +753,7 @@ if (!SpeechRecognition) {
   }
 
   function goToNextQuestionNow() {
-    if (!selectedCharacter || !enemyCharacter) return;
-    if (nextRoundTimeout) {
-      clearTimeout(nextRoundTimeout);
-      nextRoundTimeout = null;
-    }
-    answerLocked = false;
-    setCharacterImage(playerImageElement, selectedCharacter, "idle");
-    setCharacterImage(enemyImageElement, enemyCharacter, "idle");
-    generateQuestion();
+    forceNextQuestion();
   }
 
   function isPromptEcho(text) {

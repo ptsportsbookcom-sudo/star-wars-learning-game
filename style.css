@@ -381,12 +381,14 @@ body.flash-lose {
 }
 
 #questionImage {
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
+  width: min(72vw, 300px);
+  height: min(72vw, 300px);
+  object-fit: cover;
   border-radius: 12px;
-  background: #000;
-  padding: 6px;
+  background: #0b1220;
+  padding: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 4px rgba(254, 218, 74, 0.18), 0 12px 28px rgba(0, 0, 0, 0.45);
   margin: 0.4rem auto 0.1rem;
   display: block;
   position: relative;
@@ -420,6 +422,40 @@ body.flash-lose {
 
 #impactText.show-miss {
   color: #ff7777;
+}
+
+.result-popup {
+  position: fixed;
+  left: 50%;
+  top: 12%;
+  transform: translateX(-50%) scale(0.7);
+  min-width: min(82vw, 420px);
+  max-width: 88vw;
+  text-align: center;
+  font-size: clamp(2rem, 7vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 18px;
+  padding: 14px 18px;
+  z-index: 1200;
+  opacity: 0;
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+}
+
+.result-popup.win {
+  background: linear-gradient(135deg, rgba(82, 241, 124, 0.95), rgba(19, 133, 64, 0.92));
+  color: #052b13;
+}
+
+.result-popup.lose {
+  background: linear-gradient(135deg, rgba(255, 111, 111, 0.96), rgba(168, 34, 34, 0.95));
+  color: #3f0505;
+}
+
+.result-popup.show {
+  animation: popupBlast 1.2s ease forwards;
 }
 
 .question-area {
@@ -502,5 +538,24 @@ body.flash-lose {
   }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes popupBlast {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.55);
+  }
+  18% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.08);
+  }
+  75% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.9);
   }
 }

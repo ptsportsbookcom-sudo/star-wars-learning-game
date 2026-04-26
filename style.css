@@ -537,6 +537,20 @@ body.flash-lose {
   animation: popupBlast 1.2s ease forwards;
 }
 
+.result-popup.match-final {
+  top: 8%;
+  min-width: min(88vw, 520px);
+  font-size: clamp(2.2rem, 8vw, 4.2rem);
+  letter-spacing: 0.12em;
+  border-width: 4px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25), 0 20px 60px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.result-popup.match-final.show {
+  animation: matchFinalPopup 2.8s ease forwards;
+}
+
 #battleResult {
   font-size: 1.2rem;
   letter-spacing: 0.04em;
@@ -680,3 +694,26 @@ body.flash-lose {
     transform: scale(0.98);
   }
 }
+
+@keyframes matchFinalPopup {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.45) rotate(-1deg);
+  }
+  14% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.12) rotate(1deg);
+  }
+  26% {
+    transform: translateX(-50%) scale(0.98) rotate(-0.5deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.03) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.9);
+  }
+}
+

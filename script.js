@@ -276,22 +276,25 @@ function applyOutcomeOverlay(outcomeClass) {
   }
 }
 
-function showResultPopup(message, type) {
+function showResultPopup(message, type, durationMs = 1400, extraClass = "") {
   if (!resultPopupElement) return;
   if (resultPopupTimeout) {
     clearTimeout(resultPopupTimeout);
   }
   resultPopupElement.textContent = message;
-  resultPopupElement.classList.remove("hidden", "win", "lose", "show");
+  resultPopupElement.classList.remove("hidden", "win", "lose", "show", "match-final");
+  if (extraClass) {
+    resultPopupElement.classList.add(extraClass);
+  }
   resultPopupElement.classList.add(type);
   // Force reflow so repeated popups still animate.
   void resultPopupElement.offsetWidth;
   resultPopupElement.classList.add("show");
   resultPopupTimeout = setTimeout(() => {
-    resultPopupElement.classList.remove("show", "win", "lose");
+    resultPopupElement.classList.remove("show", "win", "lose", "match-final");
     resultPopupElement.classList.add("hidden");
     resultPopupTimeout = null;
-  }, 1400);
+  }, durationMs);
 }
 
 function updateStreakDisplay() {
@@ -386,10 +389,43 @@ function showMatchOutcomeIcon(winnerCharacter, loserCharacter, winnerOnPlayerSid
   setCharacterImage(loserImage, loserCharacter, "lose");
 }
 
+function playMatchFinaleFanfare(kind) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+
+  const ctx = new AudioCtx();
+  const notes =
+    kind === "win"
+      ? [523.25, 659.25, 783.99, 1046.5]
+      : [392, 311.13, 261.63, 196];
+  const waveType = kind === "win" ? "triangle" : "sawtooth";
+
+  notes.forEach((freq, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = waveType;
+    osc.frequency.value = freq;
+    gain.gain.value = 0.0001;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const startAt = ctx.currentTime + idx * 0.16;
+    const endAt = startAt + 0.28;
+    gain.gain.exponentialRampToValueAtTime(0.15, startAt + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+    osc.start(startAt);
+    osc.stop(endAt);
+  });
+}
+
+function triggerMatchFinale(isWin) {
+  playMatchFinaleFanfare(isWin ? "win" : "lose");
+}
+
 function handleScoreFinishIfNeeded() {
   if (playerScore >= TARGET_SCORE) {
     setGameState("idle");
-    showResultPopup("YOU WON THE MATCH!", "win");
+    triggerMatchFinale(true);
+    showResultPopup("GALACTIC VICTORY!", "win", 2800, "match-final");
     speakMessage("Amazing! You won the match!");
     statusElement.textContent = "Match complete. Say start for a new game.";
     showMatchOutcomeIcon(selectedCharacter, enemyCharacter, true);
@@ -397,7 +433,8 @@ function handleScoreFinishIfNeeded() {
   }
   if (enemyScore >= TARGET_SCORE) {
     setGameState("idle");
-    showResultPopup("ENEMY WON THE MATCH!", "lose");
+    triggerMatchFinale(false);
+    showResultPopup("THE DARK SIDE WINS!", "lose", 2800, "match-final");
     speakMessage("The enemy won this match. Say start to play again.");
     statusElement.textContent = "Match complete. Say start for a new game.";
     showMatchOutcomeIcon(enemyCharacter, selectedCharacter, false);
@@ -785,27 +822,33 @@ function getNumberFromSpeech(text) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s]/g, " ");
+    // Keep Greek letters too, so Greek number words are preserved.
+    .replace(/[^\w\s\u0370-\u03ff]/g, " ");
 
   const tokens = normalized.split(/\s+/).filter(Boolean);
 
   const tokenMap = {
     one: 1, won: 1, ena: 1, ena1: 1,
-    two: 2, to: 2, too: 2, dio: 2, duo: 2, dyo: 2,
+    two: 2, to: 2, too: 2, tu: 2, dio: 2, duo: 2, dyo: 2,
     three: 3, tree: 3, tria: 3,
-    four: 4, for: 4, tessera: 4, tesera: 4,
+    four: 4, for: 4, tessera: 4, tesera: 4, tessara: 4,
     five: 5, vive: 5, pente: 5,
     six: 6, sex: 6, exi: 6,
     seven: 7, efta: 7, epta: 7,
     eight: 8, ate: 8, okto: 8, oktoh: 8,
     nine: 9, nein: 9, ennia: 9, ennea: 9, enya: 9,
-    ten: 10, deka: 10,
+    ten: 10, then: 10, deka: 10,
     ενα: 1, ενας: 1, δυο: 2, τρια: 3, τεσσερα: 4, πεντε: 5,
     εξι: 6, επτα: 7, οκτω: 8, εννια: 9, δεκα: 10
   };
 
+  const tokenEntries = Object.entries(tokenMap);
+  const normalizeToken = (value) =>
+    normalizeGreek(String(value).toLowerCase().replace(/[^a-z0-9\u0370-\u03ff]/g, ""));
+
   for (let i = tokens.length - 1; i >= 0; i--) {
-    const t = tokens[i];
+    const t = normalizeToken(tokens[i]);
+    if (!t) continue;
 
     if (/^\d+$/.test(t)) return parseInt(t, 10);
 
@@ -818,6 +861,31 @@ function getNumberFromSpeech(text) {
   for (const [k, v] of Object.entries(tokenMap)) {
     if (normalized.includes(` ${k} `) || normalized.startsWith(`${k} `) || normalized.endsWith(` ${k}`) || normalized === k) {
       return v;
+    }
+  }
+
+  // Fuzzy fallback for ASR glitches (example: "thre" for "three", "oktoo" for "okto").
+  // We only accept close matches to avoid random false positives.
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const spoken = normalizeToken(tokens[i]);
+    if (spoken.length < 3 || /^\d+$/.test(spoken)) continue;
+
+    let bestScore = Infinity;
+    let bestValue = null;
+    for (const [word, value] of tokenEntries) {
+      const target = normalizeToken(word);
+      if (!target) continue;
+      const distance = getLevenshteinDistance(spoken, target);
+      const maxLen = Math.max(spoken.length, target.length);
+      const ratio = distance / maxLen;
+      if (ratio < bestScore) {
+        bestScore = ratio;
+        bestValue = value;
+      }
+    }
+
+    if (bestValue !== null && bestScore <= 0.34) {
+      return bestValue;
     }
   }
 
@@ -1109,11 +1177,9 @@ if (!SpeechRecognition) {
       const spokenNumber = getNumberFromSpeech(transcript);
       updateDebugInfo({ parsed: spokenNumber === null ? "null" : spokenNumber });
       if (spokenNumber === null) {
-        if (transcript.replace(/\s+/g, "").length >= 2) {
-          updateDebugInfo({ decision: "number wrong (no number)" });
-          answerLocked = true;
-          handleWrongAnswer();
-        }
+        // In number mode, ignore noisy speech chunks and keep listening.
+        // This prevents rounds from feeling "stuck" for kids when ASR misses a number word.
+        updateDebugInfo({ decision: "number not understood - keep listening" });
         return;
       }
       answerLocked = true;

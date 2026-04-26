@@ -274,10 +274,14 @@ function handleCorrectAnswer() {
   speakMessage("Correct!");
 
   // WAIT 5 SECONDS BEFORE NEXT QUESTION
-  setTimeout(() => {
+  if (nextRoundTimeout) {
+    clearTimeout(nextRoundTimeout);
+  }
+  nextRoundTimeout = setTimeout(() => {
     setCharacterImage(playerImageElement, selectedCharacter, "idle");
     setCharacterImage(enemyImageElement, enemyCharacter, "idle");
     answerLocked = false;
+    nextRoundTimeout = null;
     generateQuestion();
   }, 5000);
 }
@@ -301,10 +305,14 @@ function handleWrongAnswer() {
 
   speakMessage("Wrong!");
 
-  setTimeout(() => {
+  if (nextRoundTimeout) {
+    clearTimeout(nextRoundTimeout);
+  }
+  nextRoundTimeout = setTimeout(() => {
     setCharacterImage(playerImageElement, selectedCharacter, "idle");
     setCharacterImage(enemyImageElement, enemyCharacter, "idle");
     answerLocked = false;
+    nextRoundTimeout = null;
     generateQuestion();
   }, 5000);
 }
@@ -457,6 +465,48 @@ function normalizeGreek(text) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function getLevenshteinDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const dp = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+  for (let i = 0; i < rows; i += 1) dp[i][0] = i;
+  for (let j = 0; j < cols; j += 1) dp[0][j] = j;
+
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return dp[a.length][b.length];
+}
+
+function isCloseWordMatch(spokenText, expectedWord) {
+  const spoken = normalizeGreek(spokenText);
+  const expected = normalizeGreek(expectedWord);
+  if (!spoken || !expected) return false;
+
+  if (spoken.includes(expected) || expected.includes(spoken)) {
+    return true;
+  }
+
+  const words = spoken.split(/\s+/).filter((w) => w.length >= 2);
+  return words.some((word) => {
+    const distance = getLevenshteinDistance(word, expected);
+    const maxLen = Math.max(word.length, expected.length);
+
+    if (maxLen <= 4) return distance <= 1;
+    if (maxLen <= 7) return distance <= 2;
+    return distance <= 3;
+  });
+}
+
 function getCharacterFromSpeech(text) {
   const lower = text.toLowerCase();
   const normalized = normalizeVoiceTranscript(text);
@@ -585,12 +635,25 @@ if (!SpeechRecognition) {
   recognition.maxAlternatives = 1;
 
   const allowedCommands = ["start", "ξεκινα"];
+  const nextCommands = ["next", "επομενο", "epomeno"];
   function setWaitingStatus() {
     statusElement.textContent = "Waiting for command...";
   }
 
   function hideListeningButton() {
     startListeningButton.classList.add("hidden");
+  }
+
+  function goToNextQuestionNow() {
+    if (!selectedCharacter || !enemyCharacter) return;
+    if (nextRoundTimeout) {
+      clearTimeout(nextRoundTimeout);
+      nextRoundTimeout = null;
+    }
+    answerLocked = false;
+    setCharacterImage(playerImageElement, selectedCharacter, "idle");
+    setCharacterImage(enemyImageElement, enemyCharacter, "idle");
+    generateQuestion();
   }
 
   function isPromptEcho(text) {
@@ -715,6 +778,14 @@ if (!SpeechRecognition) {
     const normalizedTranscript = normalizeVoiceTranscript(transcript);
     if (!normalizedTranscript) return;
 
+    const nextMatch = nextCommands.some((command) =>
+      normalizedTranscript.includes(command)
+    );
+    if (nextMatch && (gameState === "answer" || gameState === "result")) {
+      goToNextQuestionNow();
+      return;
+    }
+
     if (gameState === "idle") {
       const startMatch = allowedCommands.some((command) =>
         normalizedTranscript.includes(command)
@@ -775,10 +846,11 @@ if (!SpeechRecognition) {
     // OBJECT
     if (currentQuestion.type === "object") {
       const answer = normalizeGreek(transcript);
-      const isCorrect = [
+      const possibleAnswers = [
         ...currentQuestion.answers,
         ...(currentQuestion.alt || [])
-      ].some(a => answer.includes(normalizeGreek(a)));
+      ];
+      const isCorrect = possibleAnswers.some((a) => isCloseWordMatch(answer, a));
 
       // Ignore tiny/noisy chunks instead of auto-wrong.
       if (answer.replace(/\s+/g, "").length < 2) return;

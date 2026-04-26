@@ -41,6 +41,7 @@ let answerLocked = false;
 let lastQuestion = "";
 let gameMode = "math"; // math | alphabet | object
 let playerScore = 0;
+let enemyScore = 0;
 const TARGET_SCORE = 15;
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
@@ -283,7 +284,7 @@ function showResultPopup(message, type) {
 
 function updateStreakDisplay() {
   if (!streakDisplayElement) return;
-  streakDisplayElement.textContent = `Score ${playerScore > 0 ? "+" : ""}${playerScore} / ${TARGET_SCORE}`;
+  streakDisplayElement.textContent = `Hero ${playerScore} - Enemy ${enemyScore} (first to ${TARGET_SCORE})`;
 }
 
 function playOutcomeSound(kind) {
@@ -312,7 +313,11 @@ function playOutcomeSound(kind) {
 }
 
 function handleScoreProgress(isCorrectAnswer) {
-  playerScore += isCorrectAnswer ? 1 : -1;
+  if (isCorrectAnswer) {
+    playerScore += 3;
+  } else {
+    enemyScore += 2;
+  }
   updateStreakDisplay();
 }
 
@@ -341,7 +346,7 @@ function handleScoreFinishIfNeeded() {
     showMatchOutcomeIcon(selectedCharacter, enemyCharacter, true);
     return true;
   }
-  if (playerScore <= -TARGET_SCORE) {
+  if (enemyScore >= TARGET_SCORE) {
     setGameState("idle");
     showResultPopup("ENEMY WON THE MATCH!", "lose");
     speakMessage("The enemy won this match. Say start to play again.");
@@ -777,6 +782,7 @@ function startGame() {
   lastQuestion = "";
   answerLocked = false;
   playerScore = 0;
+  enemyScore = 0;
   updateStreakDisplay();
   clearAnswerStuckTimer();
   if (nextRoundTimeout) {

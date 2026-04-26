@@ -581,7 +581,7 @@ if (!SpeechRecognition) {
 } else {
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
-  recognition.interimResults = true;
+  recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
   const allowedCommands = ["start", "ξεκινα"];
@@ -703,44 +703,74 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
+
     const result = event.results[event.results.length - 1];
-    const transcript = result[0].transcript.trim();
-    if (!transcript) return;
-    console.log("----------");
-    console.log("MOBILE HEARD:", transcript);
-    console.log("MODE:", gameMode);
-    console.log("QUESTION:", currentQuestion);
-    console.log("HEARD:", transcript);
+
+    if (!result.isFinal) return;
+
+    const transcript = result[0].transcript.trim().toLowerCase();
+
+    console.log("FINAL HEARD:", transcript);
     transcriptElement.textContent = `You said: ${transcript}`;
 
-    const normalizedTranscript = normalizeVoiceTranscript(transcript);
-    if (!normalizedTranscript) {
+    if (!currentQuestion) return;
+    if (answerLocked) return;
+
+    // MATH
+    if (currentQuestion.type === "math") {
+      const spokenNumber = getNumberFromSpeech(transcript);
+
+      console.log("NUMBER:", spokenNumber, "EXPECTED:", currentQuestion.answer);
+
+      if (spokenNumber === null) return;
+
+      answerLocked = true;
+
+      if (spokenNumber === currentQuestion.answer) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
+      }
+
       return;
     }
 
-    console.log("STATE:", gameState);
+    // ALPHABET
+    if (currentQuestion.type === "alphabet") {
+      const answer = transcript;
 
-    if (gameState === "idle") {
-      const startMatch = allowedCommands.some((command) =>
-        normalizedTranscript.includes(command)
+      const isCorrect = currentQuestion.answers.some(a =>
+        answer.includes(a)
       );
-      if (startMatch) {
-        startGame();
+
+      answerLocked = true;
+
+      if (isCorrect) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
       }
+
       return;
     }
 
-    if (gameState === "choose_character") {
-      const character = getCharacterFromSpeech(transcript);
-      console.log("CHARACTER MATCH:", character);
-      if (character) {
-        selectCharacter(character);
-      }
-      return;
-    }
+    // OBJECT
+    if (currentQuestion.type === "object") {
+      const answer = transcript;
 
-    if (gameState === "answer") {
-      processAnswer(transcript);
+      const isCorrect = [
+        ...currentQuestion.answers,
+        ...(currentQuestion.alt || [])
+      ].some(a => answer.includes(a));
+
+      answerLocked = true;
+
+      if (isCorrect) {
+        handleCorrectAnswer();
+      } else {
+        handleWrongAnswer();
+      }
+
       return;
     }
   };

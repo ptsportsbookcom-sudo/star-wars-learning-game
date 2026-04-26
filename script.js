@@ -703,14 +703,12 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
-
     const result = event.results[event.results.length - 1];
-
-    if (!result.isFinal) return;
-
     const transcript = result[0].transcript.trim().toLowerCase();
 
-    console.log("FINAL HEARD:", transcript);
+    if (!transcript) return;
+
+    console.log("HEARD:", transcript);
     transcriptElement.textContent = `You said: ${transcript}`;
 
     if (!currentQuestion) return;
@@ -719,8 +717,6 @@ if (!SpeechRecognition) {
     // MATH
     if (currentQuestion.type === "math") {
       const spokenNumber = getNumberFromSpeech(transcript);
-
-      console.log("NUMBER:", spokenNumber, "EXPECTED:", currentQuestion.answer);
 
       if (spokenNumber === null) return;
 
@@ -737,10 +733,8 @@ if (!SpeechRecognition) {
 
     // ALPHABET
     if (currentQuestion.type === "alphabet") {
-      const answer = transcript;
-
       const isCorrect = currentQuestion.answers.some(a =>
-        answer.includes(a)
+        transcript.includes(a)
       );
 
       answerLocked = true;
@@ -756,12 +750,10 @@ if (!SpeechRecognition) {
 
     // OBJECT
     if (currentQuestion.type === "object") {
-      const answer = transcript;
-
       const isCorrect = [
         ...currentQuestion.answers,
         ...(currentQuestion.alt || [])
-      ].some(a => answer.includes(a));
+      ].some(a => transcript.includes(a));
 
       answerLocked = true;
 

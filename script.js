@@ -591,7 +591,6 @@ if (!SpeechRecognition) {
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
-  let answerDebounceTimer = null;
 
   const allowedCommands = ["start", "ξεκινα"];
   function setWaitingStatus() {
@@ -613,21 +612,22 @@ if (!SpeechRecognition) {
     );
   }
 
-  function processAnswer(cleanedTranscript) {
+  function processAnswer(transcript) {
     if (!currentQuestion) return;
     if (answerLocked) return;
-    if (Date.now() < answerAcceptAt) return;
 
-    console.log("PROCESS ANSWER:", cleanedTranscript);
+    console.log("PROCESS ANSWER:", transcript);
     console.log("TYPE:", currentQuestion.type);
 
-    if (isPromptEcho(cleanedTranscript)) {
+    if (isPromptEcho(transcript)) {
       console.log("PROMPT ECHO IGNORED");
       return;
     }
 
     if (currentQuestion.type === "alphabet") {
-      const answer = normalizeGreek(cleanedTranscript);
+      console.log("ANSWER TRANSCRIPT:", transcript);
+      console.log("QUESTION:", currentQuestion);
+      const answer = normalizeGreek(transcript);
       const allAnswers = [
         ...currentQuestion.answers,
         ...(currentQuestion.alt || []),
@@ -651,7 +651,9 @@ if (!SpeechRecognition) {
     }
 
     if (currentQuestion.type === "object") {
-      const answer = normalizeGreek(cleanedTranscript);
+      console.log("ANSWER TRANSCRIPT:", transcript);
+      console.log("QUESTION:", currentQuestion);
+      const answer = normalizeGreek(transcript);
       const allAnswers = [
         ...currentQuestion.answers,
         ...(currentQuestion.alt || []),
@@ -668,21 +670,19 @@ if (!SpeechRecognition) {
       return;
     }
 
-    const spokenNumber = getNumberFromSpeech(cleanedTranscript);
+    const spokenNumber = getNumberFromSpeech(transcript);
     console.log("NUMBER DETECTED:", spokenNumber);
     console.log("EXPECTED:", currentQuestion?.answer);
     if (spokenNumber === null) {
-      console.log("NO MATCH — ignoring");
-      console.log("MATCH RESULT:", false);
+      console.log("NO NUMBER MATCH");
       return;
     }
-
-    const isCorrect = spokenNumber === currentQuestion.answer;
-    console.log("MATCH RESULT:", isCorrect);
     answerLocked = true;
-    if (isCorrect) {
+    if (spokenNumber === currentQuestion.answer) {
+      console.log("MATCH RESULT:", true);
       handleCorrectAnswer();
     } else {
+      console.log("MATCH RESULT:", false);
       handleWrongAnswer();
     }
   }
@@ -715,25 +715,17 @@ if (!SpeechRecognition) {
       return;
     }
 
-    let combinedTranscript = "";
-
-    for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      combinedTranscript += event.results[i][0].transcript;
-    }
-
-    const cleanedTranscript = combinedTranscript.trim();
-    const cleanedFinalTranscript = cleanedTranscript;
+    const result = event.results[event.results.length - 1];
+    const transcript = result[0].transcript.trim();
+    if (!transcript) return;
     console.log("----------");
-    console.log("RAW:", combinedTranscript);
-    console.log("FINAL:", cleanedFinalTranscript);
+    console.log("MOBILE HEARD:", transcript);
     console.log("MODE:", gameMode);
     console.log("QUESTION:", currentQuestion);
-    console.log("HEARD:", cleanedTranscript);
-    transcriptElement.textContent = `You said: ${
-      cleanedTranscript || "..."
-    }`;
+    console.log("HEARD:", transcript);
+    transcriptElement.textContent = `You said: ${transcript}`;
 
-    const normalizedTranscript = normalizeVoiceTranscript(cleanedTranscript);
+    const normalizedTranscript = normalizeVoiceTranscript(transcript);
     if (!normalizedTranscript) {
       return;
     }
@@ -751,7 +743,7 @@ if (!SpeechRecognition) {
     }
 
     if (gameState === "choose_character") {
-      const character = getCharacterFromSpeech(cleanedTranscript);
+      const character = getCharacterFromSpeech(transcript);
       console.log("CHARACTER MATCH:", character);
       if (character) {
         selectCharacter(character);
@@ -760,10 +752,7 @@ if (!SpeechRecognition) {
     }
 
     if (gameState === "answer") {
-      clearTimeout(answerDebounceTimer);
-      answerDebounceTimer = setTimeout(() => {
-        processAnswer(cleanedTranscript);
-      }, 700);
+      processAnswer(transcript);
       return;
     }
   };

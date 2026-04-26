@@ -47,6 +47,8 @@ let gameMode = "math"; // math | number | object
 let playerScore = 0;
 let enemyScore = 0;
 const TARGET_SCORE = 15;
+const ROUND_MODES = ["math", "object", "number"];
+let roundModeIndex = 0;
 
 const HEROES = ["Luke Skywalker", "R2-D2"];
 const VILLAINS = ["Darth Vader", "Emperor"];
@@ -318,9 +320,9 @@ function playOutcomeSound(kind) {
 
 function handleScoreProgress(isCorrectAnswer) {
   if (isCorrectAnswer) {
-    playerScore += 3;
+    playerScore += 1;
   } else {
-    enemyScore += 2;
+    enemyScore += 1;
   }
   updateStreakDisplay();
 }
@@ -576,9 +578,9 @@ function generateQuestion() {
   clearAnswerStuckTimer();
   answerLocked = false;
   battleResultElement.textContent = "Ready to fight";
-  // Answer phase stance: both characters are ready to attack.
-  setCharacterImage(playerImageElement, selectedCharacter, "attack");
-  setCharacterImage(enemyImageElement, enemyCharacter, "attack");
+  // Start each round in defend stance.
+  setCharacterImage(playerImageElement, selectedCharacter, "idle");
+  setCharacterImage(enemyImageElement, enemyCharacter, "idle");
   document.body.classList.remove("flash-win", "flash-lose");
   questionDisplayElement.style.transform = "scale(0.7)";
   questionDisplayElement.style.opacity = "0";
@@ -590,7 +592,8 @@ function generateQuestion() {
     questionDisplayElement.style.transform = "scale(1)";
   }, 250);
 
-  gameMode = ["math", "number", "object"][Math.floor(Math.random() * 3)];
+  gameMode = ROUND_MODES[roundModeIndex];
+  roundModeIndex = (roundModeIndex + 1) % ROUND_MODES.length;
   console.log("MODE:", gameMode);
 
   if (gameMode === "number") {
@@ -761,6 +764,8 @@ function getCharacterFromSpeech(text) {
 function getNumberFromSpeech(text) {
   const normalized = text
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^\w\s]/g, " ");
 
   const tokens = normalized.split(/\s+/).filter(Boolean);
@@ -775,7 +780,9 @@ function getNumberFromSpeech(text) {
     seven: 7, efta: 7, epta: 7,
     eight: 8, okto: 8,
     nine: 9, ennia: 9, ennea: 9, enya: 9,
-    ten: 10, deka: 10
+    ten: 10, deka: 10,
+    ενα: 1, ενας: 1, δυο: 2, τρια: 3, τεσσερα: 4, πεντε: 5,
+    εξι: 6, επτα: 7, οκτω: 8, εννια: 9, δεκα: 10
   };
 
   for (let i = tokens.length - 1; i >= 0; i--) {
@@ -818,6 +825,7 @@ function startGame() {
   answerLocked = false;
   playerScore = 0;
   enemyScore = 0;
+  roundModeIndex = 0;
   updateStreakDisplay();
   clearAnswerStuckTimer();
   if (nextRoundTimeout) {
@@ -987,9 +995,12 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
-    const result = event.results[event.resultIndex] || event.results[event.results.length - 1];
-    if (!result || !result[0]) return;
-    const transcript = result[0].transcript.trim().toLowerCase();
+    let combinedTranscript = "";
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      const piece = event.results[i] && event.results[i][0] ? event.results[i][0].transcript : "";
+      combinedTranscript += `${piece} `;
+    }
+    const transcript = combinedTranscript.trim().toLowerCase();
 
     if (!transcript) return;
 
@@ -1036,7 +1047,13 @@ if (!SpeechRecognition) {
     if (currentQuestion.type === "math") {
       const spokenNumber = getNumberFromSpeech(transcript);
 
-      if (spokenNumber === null) return;
+      if (spokenNumber === null) {
+        if (transcript.replace(/\s+/g, "").length >= 2) {
+          answerLocked = true;
+          handleWrongAnswer();
+        }
+        return;
+      }
 
       answerLocked = true;
 
@@ -1052,7 +1069,13 @@ if (!SpeechRecognition) {
     // NUMBER
     if (currentQuestion.type === "number") {
       const spokenNumber = getNumberFromSpeech(transcript);
-      if (spokenNumber === null) return;
+      if (spokenNumber === null) {
+        if (transcript.replace(/\s+/g, "").length >= 2) {
+          answerLocked = true;
+          handleWrongAnswer();
+        }
+        return;
+      }
       answerLocked = true;
       if (spokenNumber === currentQuestion.answer) {
         handleCorrectAnswer();
@@ -1078,13 +1101,7 @@ if (!SpeechRecognition) {
       if (isCorrect) {
         handleCorrectAnswer();
       } else {
-        // Mark wrong only when speech resembles a known object word.
-        const knownObjectSaid = getAllObjectAliases().some((a) => isCloseWordMatch(answer, a));
-        if (knownObjectSaid) {
-          handleWrongAnswer();
-        } else {
-          answerLocked = false;
-        }
+        handleWrongAnswer();
       }
 
       return;

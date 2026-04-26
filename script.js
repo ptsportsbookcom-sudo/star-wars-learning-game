@@ -19,6 +19,7 @@ const questionDisplayElement = document.getElementById("questionDisplay");
 const questionImageElement = document.getElementById("questionImage");
 const battleResultElement = document.getElementById("battleResult");
 const impactTextElement = document.getElementById("impactText");
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
 let enemyCharacter = "";
@@ -778,6 +779,11 @@ if (!SpeechRecognition) {
     window.removeEventListener("pointerdown", handleFirstInteraction);
   }
 
-  window.addEventListener("pointerdown", handleFirstInteraction);
-  statusElement.textContent = "Tap once, then speak.";
+  if (isMobile) {
+    window.addEventListener("pointerdown", handleFirstInteraction);
+    statusElement.textContent = "Tap once, then speak.";
+  } else {
+    // DESKTOP -> start immediately
+    startContinuousVoiceMode();
+  }
 }

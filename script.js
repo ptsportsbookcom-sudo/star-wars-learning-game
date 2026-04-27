@@ -30,6 +30,7 @@ const debugHeardElement = document.getElementById("debugHeard");
 const debugParsedElement = document.getElementById("debugParsed");
 const debugDecisionElement = document.getElementById("debugDecision");
 const debugScoreElement = document.getElementById("debugScore");
+const mobileListenFab = document.getElementById("mobileListenFab");
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
@@ -914,6 +915,9 @@ function selectCharacter(character) {
   updateSelectedCharacterCard(selectedCharacter);
   selectionScreenElement.classList.add("hidden");
   gameScreenElement.classList.remove("hidden");
+  if (isMobile && mobileListenFab) {
+    mobileListenFab.classList.remove("hidden");
+  }
   setBattleBackground("theme-battle");
   applyOutcomeOverlay("");
   playBackgroundMusic();
@@ -950,6 +954,9 @@ function startGame() {
   playBackgroundMusic();
   selectionScreenElement.classList.remove("hidden");
   gameScreenElement.classList.add("hidden");
+  if (mobileListenFab) {
+    mobileListenFab.classList.add("hidden");
+  }
   speakMessage("Choose your character by saying their name");
 }
 
@@ -1312,18 +1319,19 @@ if (!SpeechRecognition) {
     setStatusMessage("Listening...");
     startRecognitionSafely();
   });
-
-  function handleMobileTapToListen() {
-    if (!isMobile || !voiceActivated) return;
-    if (isRecognitionRunning) return;
-    playBackgroundMusic();
-    setStatusMessage("Listening...");
-    startRecognitionSafely();
+  if (mobileListenFab) {
+    mobileListenFab.addEventListener("click", () => {
+      playBackgroundMusic();
+      if (!voiceActivated) {
+        startContinuousVoiceMode();
+      }
+      setStatusMessage("Listening...");
+      startRecognitionSafely();
+    });
   }
 
   if (isMobile) {
     window.addEventListener("pointerdown", handleFirstInteraction);
-    window.addEventListener("pointerdown", handleMobileTapToListen);
     setStatusMessage("Tap once, then tap 'Tap to Listen'.");
     startListeningButton.classList.remove("hidden");
     startListeningButton.textContent = "Tap to Listen";

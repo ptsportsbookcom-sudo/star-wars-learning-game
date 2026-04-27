@@ -1313,8 +1313,17 @@ if (!SpeechRecognition) {
     startRecognitionSafely();
   });
 
+  function handleMobileTapToListen() {
+    if (!isMobile || !voiceActivated) return;
+    if (isRecognitionRunning) return;
+    playBackgroundMusic();
+    setStatusMessage("Listening...");
+    startRecognitionSafely();
+  }
+
   if (isMobile) {
     window.addEventListener("pointerdown", handleFirstInteraction);
+    window.addEventListener("pointerdown", handleMobileTapToListen);
     setStatusMessage("Tap once, then tap 'Tap to Listen'.");
     startListeningButton.classList.remove("hidden");
     startListeningButton.textContent = "Tap to Listen";

@@ -51,6 +51,7 @@ let answerLocked = false;
 let lastQuestion = "";
 let questionOpenedAt = 0;
 let lastProcessedTranscript = "";
+let suppressRecognitionUntil = 0;
 let gameMode = "math"; // math | number | object
 let playerScore = 0;
 let enemyScore = 0;
@@ -561,12 +562,20 @@ function handleWrongAnswer() {
 }
 
 function speakMessage(message) {
+  // Briefly suppress recognition so TTS prompts don't get scored as answers.
+  suppressRecognitionUntil = Date.now() + 700;
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
     const isVillain = VILLAINS.includes(selectedCharacter);
     utterance.rate = isVillain ? 0.82 : 0.85;
     utterance.pitch = isVillain ? 0.7 : 0.8;
+    utterance.onstart = () => {
+      suppressRecognitionUntil = Math.max(suppressRecognitionUntil, Date.now() + 1200);
+    };
+    utterance.onend = () => {
+      suppressRecognitionUntil = Math.max(suppressRecognitionUntil, Date.now() + 250);
+    };
     window.speechSynthesis.speak(utterance);
   }
   statusElement.textContent = message;
@@ -1093,23 +1102,37 @@ if (!SpeechRecognition) {
   };
 
   recognition.onresult = (event) => {
-    let combinedTranscript = "";
-    for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      const piece = event.results[i] && event.results[i][0] ? event.results[i][0].transcript : "";
-      combinedTranscript += `${piece} `;
-    }
-    if (!combinedTranscript.trim() && event.results.length) {
-      const last = event.results[event.results.length - 1];
-      const fallbackPiece = last && last[0] ? last[0].transcript : "";
-      combinedTranscript = fallbackPiece;
-    }
-    const transcript = combinedTranscript.trim().toLowerCase();
+    let finalTranscript = "";
+    let interimTranscript = "";
+    let sawFinal = false;
 
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      const result = event.results[i];
+      const piece = result && result[0] ? String(result[0].transcript || "").trim() : "";
+      if (!piece) continue;
+      if (result.isFinal) {
+        sawFinal = true;
+        finalTranscript += `${piece} `;
+      } else {
+        interimTranscript += `${piece} `;
+      }
+    }
+    const transcriptForUi = (finalTranscript || interimTranscript).trim().toLowerCase();
+    if (!transcriptForUi) return;
+    transcriptElement.textContent = `You said: ${transcriptForUi}`;
+
+    // Only score final ASR chunks; interim chunks are too noisy.
+    if (!sawFinal) return;
+
+    const transcript = finalTranscript.trim().toLowerCase();
     if (!transcript) return;
 
+    if (Date.now() < suppressRecognitionUntil) {
+      updateDebugInfo({ heard: transcript, decision: "ignored prompt echo window" });
+      return;
+    }
     console.log("HEARD:", transcript);
     console.log("STATE:", gameState);
-    transcriptElement.textContent = `You said: ${transcript}`;
     updateDebugInfo({ heard: transcript, state: gameState, decision: "hearing..." });
 
     const normalizedTranscript = normalizeVoiceTranscript(transcript);
@@ -1149,7 +1172,7 @@ if (!SpeechRecognition) {
     if (answerLocked) return;
     if (isPromptEcho(transcript)) return;
     if (normalizedTranscript === lastProcessedTranscript) return;
-    if (Date.now() - questionOpenedAt < 900) {
+    if (Date.now() - questionOpenedAt < 250) {
       updateDebugInfo({ decision: "ignored carry-over speech" });
       return;
     }

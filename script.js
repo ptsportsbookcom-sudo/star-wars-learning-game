@@ -316,6 +316,10 @@ function updateDebugInfo({ mode, state, heard, parsed, decision } = {}) {
   if (debugDecisionElement && decision !== undefined) debugDecisionElement.textContent = String(decision);
 }
 
+function setStatusMessage(message) {
+  statusElement.textContent = message;
+}
+
 function playOutcomeSound(kind) {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return;
@@ -502,11 +506,7 @@ function handleCorrectAnswer() {
   // Keep cards neutral while full-screen splash is visible.
   setCharacterImage(playerImageElement, selectedCharacter, "idle");
   setCharacterImage(enemyImageElement, enemyCharacter, "idle");
-  if (!isMobile) {
-    speakMessage("Correct!");
-  } else {
-    statusElement.textContent = "Correct!";
-  }
+  setStatusMessage("Correct!");
 
   // WAIT 5 SECONDS BEFORE NEXT QUESTION
   if (nextRoundTimeout) {
@@ -540,11 +540,7 @@ function handleWrongAnswer() {
   // Keep cards neutral while full-screen splash is visible.
   setCharacterImage(playerImageElement, selectedCharacter, "idle");
   setCharacterImage(enemyImageElement, enemyCharacter, "idle");
-  if (!isMobile) {
-    speakMessage("Wrong!");
-  } else {
-    statusElement.textContent = "Wrong!";
-  }
+  setStatusMessage("Wrong!");
 
   if (nextRoundTimeout) {
     clearTimeout(nextRoundTimeout);
@@ -578,7 +574,7 @@ function speakMessage(message) {
     };
     window.speechSynthesis.speak(utterance);
   }
-  statusElement.textContent = message;
+  setStatusMessage(message);
 }
 
 function setGameState(nextState) {
@@ -679,7 +675,7 @@ function generateQuestion() {
     if (questionImageElement) {
       questionImageElement.classList.add("hidden");
     }
-    statusElement.textContent = "Say the number shown on screen.";
+    setStatusMessage("Say the number shown on screen.");
     setGameState("answer");
     scheduleAnswerStuckTimer();
     return;
@@ -706,7 +702,7 @@ function generateQuestion() {
       questionImageElement.classList.remove("hidden");
     }
 
-    speakMessage("What is this?");
+    setStatusMessage("Name the object on screen.");
     setGameState("answer");
     scheduleAnswerStuckTimer();
     return;
@@ -738,7 +734,7 @@ function generateQuestion() {
   setRandomBackground();
   setQuestionBackground();
   setGameState("answer");
-  speakMessage(`What is ${a} plus ${b}?`);
+  setStatusMessage(`Solve on screen: ${a} + ${b}`);
   scheduleAnswerStuckTimer();
   console.log("NEW QUESTION:", a, b, "=", currentQuestion.answer);
 }
@@ -973,7 +969,7 @@ if (!SpeechRecognition) {
 } else {
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
-  recognition.interimResults = true;
+  recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
   const allowedCommands = ["start", "ξεκινα"];

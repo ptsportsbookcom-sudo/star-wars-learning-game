@@ -461,9 +461,9 @@ function scheduleAnswerStuckTimer() {
   clearAnswerStuckTimer();
   answerStuckTimeout = setTimeout(() => {
     if (gameState !== "answer" || answerLocked) return;
-    statusElement.textContent = "Tip: say the answer, or say 'next'.";
-    speakMessage("Say the answer or say next.");
-    forceNextQuestion();
+    setStatusMessage("Waiting... say the answer, or say 'next'.");
+    updateDebugInfo({ decision: "waiting for answer or next" });
+    scheduleAnswerStuckTimer();
   }, 12000);
 }
 

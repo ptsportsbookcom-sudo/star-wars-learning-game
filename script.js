@@ -1091,9 +1091,14 @@ if (!SpeechRecognition) {
   function startContinuousVoiceMode() {
     if (voiceActivated) return;
     voiceActivated = true;
-    shouldKeepListening = true;
+    shouldKeepListening = !isMobile;
     appIsActive = true;
-    hideListeningButton();
+    if (!isMobile) {
+      hideListeningButton();
+    } else {
+      startListeningButton.classList.remove("hidden");
+      startListeningButton.textContent = "Tap to Listen";
+    }
     voiceEnablePrompt.classList.add("hidden");
     setWaitingStatus();
     recognition.lang = "en-US";
@@ -1106,7 +1111,7 @@ if (!SpeechRecognition) {
 
   recognition.onstart = () => {
     isRecognitionRunning = true;
-    statusElement.textContent = "Listening...";
+    setStatusMessage("Listening...");
   };
 
   recognition.onresult = (event) => {
@@ -1264,15 +1269,20 @@ if (!SpeechRecognition) {
       voiceActivated = false;
       appIsActive = false;
       voiceEnablePrompt.classList.remove("hidden");
-      statusElement.textContent = "Tap anywhere once to enable voice";
+      setStatusMessage("Tap anywhere once to enable voice");
       return;
     }
 
-    statusElement.textContent = `Error: ${event.error}`;
+    setStatusMessage(`Error: ${event.error}`);
   };
 
   recognition.onend = () => {
     isRecognitionRunning = false;
+
+    if (isMobile) {
+      setStatusMessage("Tap 'Tap to Listen' and speak.");
+      return;
+    }
 
     if (shouldKeepListening && appIsActive) {
       if (recognitionRestartTimeout) {
@@ -1288,12 +1298,26 @@ if (!SpeechRecognition) {
   function handleFirstInteraction() {
     playBackgroundMusic();
     startContinuousVoiceMode();
+    if (isMobile) {
+      setStatusMessage("Tap 'Tap to Listen' and speak.");
+    }
     window.removeEventListener("pointerdown", handleFirstInteraction);
   }
 
+  startListeningButton.addEventListener("click", () => {
+    playBackgroundMusic();
+    if (!voiceActivated) {
+      startContinuousVoiceMode();
+    }
+    setStatusMessage("Listening...");
+    startRecognitionSafely();
+  });
+
   if (isMobile) {
     window.addEventListener("pointerdown", handleFirstInteraction);
-    statusElement.textContent = "Tap once, then speak.";
+    setStatusMessage("Tap once, then tap 'Tap to Listen'.");
+    startListeningButton.classList.remove("hidden");
+    startListeningButton.textContent = "Tap to Listen";
   } else {
     // DESKTOP -> start immediately
     startContinuousVoiceMode();

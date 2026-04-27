@@ -38,6 +38,8 @@ let gameState = "idle";
 let voiceActivated = false;
 let shouldKeepListening = false;
 let isRecognitionRunning = false;
+let recognitionRestartTimeout = null;
+let lastRecognitionStartAt = 0;
 let appIsActive = true;
 let restartPending = false;
 let musicEnabled = true;
@@ -969,8 +971,20 @@ if (!SpeechRecognition) {
 } else {
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
-  recognition.interimResults = false;
+  recognition.interimResults = true;
   recognition.maxAlternatives = 1;
+
+  function startRecognitionSafely() {
+    const now = Date.now();
+    if (isRecognitionRunning) return;
+    if (now - lastRecognitionStartAt < 900) return;
+    try {
+      lastRecognitionStartAt = now;
+      recognition.start();
+    } catch (e) {
+      console.log("Recognition start blocked");
+    }
+  }
 
   const allowedCommands = ["start", "ξεκινα"];
   const nextCommands = ["next", "επομενο", "epomeno"];
@@ -1086,9 +1100,7 @@ if (!SpeechRecognition) {
     transcriptElement.textContent = "You said: ...";
     playBackgroundMusic();
 
-    if (!isRecognitionRunning) {
-      recognition.start();
-    }
+    startRecognitionSafely();
   }
 
 
@@ -1117,10 +1129,8 @@ if (!SpeechRecognition) {
     if (!transcriptForUi) return;
     transcriptElement.textContent = `You said: ${transcriptForUi}`;
 
-    // Only score final ASR chunks; interim chunks are too noisy.
-    if (!sawFinal) return;
-
-    const transcript = finalTranscript.trim().toLowerCase();
+    // Prefer final transcript; fallback to interim to improve mobile capture reliability.
+    const transcript = (finalTranscript || interimTranscript).trim().toLowerCase();
     if (!transcript) return;
 
     if (Date.now() < suppressRecognitionUntil) {
@@ -1265,11 +1275,13 @@ if (!SpeechRecognition) {
     isRecognitionRunning = false;
 
     if (shouldKeepListening && appIsActive) {
-      try {
-        recognition.start();
-      } catch (e) {
-        console.log("Restart blocked");
+      if (recognitionRestartTimeout) {
+        clearTimeout(recognitionRestartTimeout);
       }
+      recognitionRestartTimeout = setTimeout(() => {
+        recognitionRestartTimeout = null;
+        startRecognitionSafely();
+      }, isMobile ? 1400 : 650);
     }
   };
 

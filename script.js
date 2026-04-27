@@ -49,6 +49,8 @@ let roundSplashTimeout = null;
 let currentBackgroundTheme = "theme-space";
 let answerLocked = false;
 let lastQuestion = "";
+let questionOpenedAt = 0;
+let lastProcessedTranscript = "";
 let gameMode = "math"; // math | number | object
 let playerScore = 0;
 let enemyScore = 0;
@@ -632,6 +634,8 @@ function createEmojiObjectImage(emoji, color) {
 function generateQuestion() {
   clearAnswerStuckTimer();
   answerLocked = false;
+  questionOpenedAt = Date.now();
+  lastProcessedTranscript = "";
   battleResultElement.textContent = "Ready to fight";
   // Start each round in defend stance.
   setCharacterImage(playerImageElement, selectedCharacter, "idle");
@@ -1144,6 +1148,12 @@ if (!SpeechRecognition) {
     if (!currentQuestion) return;
     if (answerLocked) return;
     if (isPromptEcho(transcript)) return;
+    if (normalizedTranscript === lastProcessedTranscript) return;
+    if (Date.now() - questionOpenedAt < 900) {
+      updateDebugInfo({ decision: "ignored carry-over speech" });
+      return;
+    }
+    lastProcessedTranscript = normalizedTranscript;
 
     // MATH
     if (currentQuestion.type === "math") {

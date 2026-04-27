@@ -30,7 +30,6 @@ const debugHeardElement = document.getElementById("debugHeard");
 const debugParsedElement = document.getElementById("debugParsed");
 const debugDecisionElement = document.getElementById("debugDecision");
 const debugScoreElement = document.getElementById("debugScore");
-const mobileListenFab = document.getElementById("mobileListenFab");
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let selectedCharacter = "";
@@ -919,9 +918,6 @@ function selectCharacter(character) {
   updateSelectedCharacterCard(selectedCharacter);
   selectionScreenElement.classList.add("hidden");
   gameScreenElement.classList.remove("hidden");
-  if (isMobile && mobileListenFab) {
-    mobileListenFab.classList.remove("hidden");
-  }
   setBattleBackground("theme-battle");
   applyOutcomeOverlay("");
   playBackgroundMusic();
@@ -958,9 +954,6 @@ function startGame() {
   playBackgroundMusic();
   selectionScreenElement.classList.remove("hidden");
   gameScreenElement.classList.add("hidden");
-  if (mobileListenFab) {
-    mobileListenFab.classList.add("hidden");
-  }
   speakMessage("Choose your character by saying their name");
 }
 
@@ -1107,14 +1100,9 @@ if (!SpeechRecognition) {
   function startContinuousVoiceMode() {
     if (voiceActivated) return;
     voiceActivated = true;
-    shouldKeepListening = !isMobile;
+    shouldKeepListening = true;
     appIsActive = true;
-    if (!isMobile) {
-      hideListeningButton();
-    } else {
-      startListeningButton.classList.remove("hidden");
-      startListeningButton.textContent = "Tap to Listen";
-    }
+    hideListeningButton();
     voiceEnablePrompt.classList.add("hidden");
     setWaitingStatus();
     recognition.lang = "en-US";
@@ -1294,21 +1282,6 @@ if (!SpeechRecognition) {
   recognition.onend = () => {
     isRecognitionRunning = false;
 
-    if (isMobile) {
-      if (gameState === "answer" && shouldKeepListening && appIsActive) {
-        if (recognitionRestartTimeout) {
-          clearTimeout(recognitionRestartTimeout);
-        }
-        recognitionRestartTimeout = setTimeout(() => {
-          recognitionRestartTimeout = null;
-          startRecognitionSafely();
-        }, 1600);
-      } else {
-        setStatusMessage("Tap 'Tap to Speak' if mic is off.");
-      }
-      return;
-    }
-
     if (shouldKeepListening && appIsActive) {
       if (recognitionRestartTimeout) {
         clearTimeout(recognitionRestartTimeout);
@@ -1322,9 +1295,7 @@ if (!SpeechRecognition) {
 
   function handleFirstInteraction() {
     startContinuousVoiceMode();
-    if (isMobile) {
-      setStatusMessage("Speak your answer. Tap 'Tap to Speak' only if mic stops.");
-    }
+    setStatusMessage("Voice enabled. Say start.");
     window.removeEventListener("pointerdown", handleFirstInteraction);
   }
 
@@ -1335,21 +1306,10 @@ if (!SpeechRecognition) {
     setStatusMessage("Listening...");
     startRecognitionSafely();
   });
-  if (mobileListenFab) {
-    mobileListenFab.addEventListener("click", () => {
-      if (!voiceActivated) {
-        startContinuousVoiceMode();
-      }
-      setStatusMessage("Listening...");
-      startRecognitionSafely();
-    });
-  }
 
   if (isMobile) {
     window.addEventListener("pointerdown", handleFirstInteraction);
-    setStatusMessage("Tap once to enable mic.");
-    startListeningButton.classList.remove("hidden");
-    startListeningButton.textContent = "Enable Mic";
+    setStatusMessage("Parent tap once to enable voice, then hands-free.");
   } else {
     // DESKTOP -> start immediately
     startContinuousVoiceMode();

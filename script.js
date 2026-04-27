@@ -55,6 +55,7 @@ let lastQuestion = "";
 let questionOpenedAt = 0;
 let lastProcessedTranscript = "";
 let suppressRecognitionUntil = 0;
+let requestListenForCurrentRound = () => {};
 let gameMode = "math"; // math | number | object
 let playerScore = 0;
 let enemyScore = 0;
@@ -681,6 +682,7 @@ function generateQuestion() {
     setStatusMessage("Say the number shown on screen.");
     setGameState("answer");
     scheduleAnswerStuckTimer();
+    requestListenForCurrentRound();
     return;
   }
 
@@ -708,6 +710,7 @@ function generateQuestion() {
     setStatusMessage("Name the object on screen.");
     setGameState("answer");
     scheduleAnswerStuckTimer();
+    requestListenForCurrentRound();
     return;
   }
 
@@ -739,6 +742,7 @@ function generateQuestion() {
   setGameState("answer");
   setStatusMessage(`Solve on screen: ${a} + ${b}`);
   scheduleAnswerStuckTimer();
+  requestListenForCurrentRound();
   console.log("NEW QUESTION:", a, b, "=", currentQuestion.answer);
 }
 
@@ -992,6 +996,11 @@ if (!SpeechRecognition) {
       console.log("Recognition start blocked");
     }
   }
+  requestListenForCurrentRound = () => {
+    if (isMobile && voiceActivated && !isRecognitionRunning) {
+      startRecognitionSafely();
+    }
+  };
 
   const allowedCommands = ["start", "ξεκινα"];
   const nextCommands = ["next", "επομενο", "epomeno"];
@@ -1110,7 +1119,6 @@ if (!SpeechRecognition) {
     setWaitingStatus();
     recognition.lang = "en-US";
     transcriptElement.textContent = "You said: ...";
-    playBackgroundMusic();
 
     startRecognitionSafely();
   }
@@ -1287,7 +1295,17 @@ if (!SpeechRecognition) {
     isRecognitionRunning = false;
 
     if (isMobile) {
-      setStatusMessage("Tap 'Tap to Listen' and speak.");
+      if (gameState === "answer" && shouldKeepListening && appIsActive) {
+        if (recognitionRestartTimeout) {
+          clearTimeout(recognitionRestartTimeout);
+        }
+        recognitionRestartTimeout = setTimeout(() => {
+          recognitionRestartTimeout = null;
+          startRecognitionSafely();
+        }, 1600);
+      } else {
+        setStatusMessage("Tap 'Tap to Speak' if mic is off.");
+      }
       return;
     }
 
@@ -1303,16 +1321,14 @@ if (!SpeechRecognition) {
   };
 
   function handleFirstInteraction() {
-    playBackgroundMusic();
     startContinuousVoiceMode();
     if (isMobile) {
-      setStatusMessage("Tap 'Tap to Listen' and speak.");
+      setStatusMessage("Speak your answer. Tap 'Tap to Speak' only if mic stops.");
     }
     window.removeEventListener("pointerdown", handleFirstInteraction);
   }
 
   startListeningButton.addEventListener("click", () => {
-    playBackgroundMusic();
     if (!voiceActivated) {
       startContinuousVoiceMode();
     }
@@ -1321,7 +1337,6 @@ if (!SpeechRecognition) {
   });
   if (mobileListenFab) {
     mobileListenFab.addEventListener("click", () => {
-      playBackgroundMusic();
       if (!voiceActivated) {
         startContinuousVoiceMode();
       }
@@ -1332,9 +1347,9 @@ if (!SpeechRecognition) {
 
   if (isMobile) {
     window.addEventListener("pointerdown", handleFirstInteraction);
-    setStatusMessage("Tap once, then tap 'Tap to Listen'.");
+    setStatusMessage("Tap once to enable mic.");
     startListeningButton.classList.remove("hidden");
-    startListeningButton.textContent = "Tap to Listen";
+    startListeningButton.textContent = "Enable Mic";
   } else {
     // DESKTOP -> start immediately
     startContinuousVoiceMode();
